@@ -1,4 +1,5 @@
 {
+
   "name": "evolutionlandbank",
   "version": "1.0.0",
   "description": "",
@@ -24,4 +25,5 @@
     "url": "https://github.com/evolutionlandorg/bank/issues"
   },
   "homepage": "https://github.com/evolutionlandorg/bank#readme"
+
 }
