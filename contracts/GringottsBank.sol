@@ -34,7 +34,7 @@ contract  GringottsBank is Ownable,BankBase {
         if (address(kryptonite_) == msg.sender) {
             uint depositID = bytesToUint256(_data);
             require(_amount >= _computePenaltyWithID(_from, depositID));
-            Deposit memory depositEntity = playerDepositInfo_[_from][depositID];
+            Deposit storage depositEntity = playerDepositInfo_[_from][depositID];
             uint value = depositEntity.value;
             _claimBack(_from, value, depositID);
 
@@ -47,10 +47,11 @@ contract  GringottsBank is Ownable,BankBase {
 
     // normal Redemption, withdraw at maturity
     function claimBack(uint _depositID) public {
-
-        Deposit memory depositEntity = playerDepositInfo_[msg.sender][_depositID];
+        // palyer can only withdraw his/her own deposit
+        Deposit storage depositEntity = playerDepositInfo_[msg.sender][_depositID];
 
         uint value = depositEntity.value;
+        require(value > 0, "wrong depositID")
         uint months = depositEntity.months;
         uint startAt = depositEntity.startAt;
         uint duration = now - startAt;
@@ -75,6 +76,11 @@ contract  GringottsBank is Ownable,BankBase {
         emit ClaimedTokens(_token, owner, balance);
     }
 
+    // query penalty of a specific deposit at the moment of invoking
+    function getPenalty(address _depositor, uint _depositID) public returns (uint) {
+        _computePenaltyWithID(_depositor, _depositID);
+    }
+
     // @dev set UNIT_INTEREST;
     function setUnitInterest(uint _unitInterest) public onlyOwner {
         setUnitInterest(_unitInterest);
@@ -92,8 +98,8 @@ contract  GringottsBank is Ownable,BankBase {
     }
 
     // @dev set KTON
-    function setKton(address _kton) public onlyOwner {
-        _setKton(_kton);
+    function setKTON(address _kton) public onlyOwner {
+        _setKTON(_kton);
     }
 
 
