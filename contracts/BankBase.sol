@@ -116,8 +116,8 @@ contract BankBase {
     */
     function _computeInterest(uint _value, uint _month) internal canBeStoredWith128Bits(_value) canBeStoredWith128Bits(_month) returns (uint) {
         // these two actually mean the multiplier is 1.006
-        uint numerator = uint256(67).pwr(uint128(_month));
-        uint denominator = uint256(66).pwr(uint128(_month));
+        uint numerator = uint256(66).pwr(uint128(_month));
+        uint denominator = uint256(65).pwr(uint128(_month));
 
         uint quotient;
         uint remainder;
