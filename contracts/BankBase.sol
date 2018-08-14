@@ -115,9 +115,9 @@ contract BankBase {
         * @param _month - Length of time from the deposit's beginning to end (in months).
     */
     function _computeInterest(uint _value, uint _month) internal canBeStoredWith128Bits(_value) canBeStoredWith128Bits(_month) returns (uint) {
-        // these two actually mean the multiplier is 1.006
-        uint numerator = uint256(66).pwr(uint128(_month));
-        uint denominator = uint256(65).pwr(uint128(_month));
+        // these two actually mean the multiplier is 1.015
+        uint numerator = 66 ** uint128(_month);
+        uint denominator = 65 ** uint128(_month);
 
         uint quotient;
         uint remainder;
