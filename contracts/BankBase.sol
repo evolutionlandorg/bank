@@ -1,10 +1,13 @@
 pragma solidity ^0.4.23;
 
 import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
+import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 import './MintableERC20.sol';
 
 
 contract BankBase {
+
+    using SafeMath for *;
 
     /*==============
      |   variables  |
@@ -31,6 +34,10 @@ contract BankBase {
 
     // amount of kryptonite after depositing 1 ring for 1 month
     uint public unitInterest_;
+
+    // real multiplier = interestMultiplierUp / interestMultiplierDown
+    uint public interestMultiplierUp_;
+    uint public interestMultiplierDown_;
 
     // penalty multiplier
     uint public penaltyMultiplier_; // 3;
@@ -93,7 +100,7 @@ contract BankBase {
         // give the player interest immediately
         uint interest = _computeInterest(_value, _month);
 
-        require(MintableERC20(kryptonite_).mint(_depositor,interest));
+        MintableERC20(kryptonite_).mint(_depositor,interest);
         emit Deposited(_depositor, depositID);
     }
 
@@ -115,9 +122,9 @@ contract BankBase {
         * @param _month - Length of time from the deposit's beginning to end (in months).
     */
     function _computeInterest(uint _value, uint _month) internal canBeStoredWith128Bits(_value) canBeStoredWith128Bits(_month) returns (uint) {
-        // these two actually mean the multiplier is 1.006
-        uint numerator = uint256(66).pwr(uint128(_month));
-        uint denominator = uint256(65).pwr(uint128(_month));
+        // these two actually mean the multiplier is 1.015
+        uint numerator = interestMultiplierUp_ ** uint128(_month);
+        uint denominator = interestMultiplierDown_ ** uint128(_month);
 
         uint quotient;
         uint remainder;
@@ -128,7 +135,7 @@ contract BankBase {
         }
         // depositing 1 ring for 12 months, interest is about 1.005 KTON
         // and the multiplier is about 2.72
-        uint interest = (unitInterest_ * uint128(_value)) * ((quotient - 1) * 10**18 + remainder * 10**18 / denominator) / (10**36);
+        uint interest = (unitInterest_ * uint128(_value)).mul((quotient - 1) * 10**18 + remainder * 10**18 / denominator) / (10**36);
         return interest;
     }
 
@@ -171,6 +178,17 @@ contract BankBase {
     // @dev set KTON
     function _setKTON(address _kton) internal {
         kryptonite_ = ERC20(_kton);
+    }
+
+
+    // @dev set interestMultiplierUp_
+    function _setInterestMultiplierUp(uint _up) internal {
+        interestMultiplierUp_ = _up;
+    }
+
+    // @dev set interestMultiplierDown_
+    function _setInterestMultiplierDown(uint _down) internal {
+        interestMultiplierDown_ = _down;
     }
 
 

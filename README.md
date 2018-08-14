@@ -10,8 +10,7 @@ deploy contract `GringottsBank`.
 constructor's paramaters:
 1. address _ring: address of token contract of RING
 2. address _kton: address of token contract of KTON
-3. uint _uintInterest:  interest generated after depositing 1 RING for 12 months
-4. uint _penaltyMultiplier: it speaks for itself.
+
 
 ### Usage
 #### 1. how to deposit RING

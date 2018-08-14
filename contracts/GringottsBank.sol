@@ -10,13 +10,15 @@ contract  GringottsBank is Ownable,BankBase {
     /**
     * @dev Bank's constructor which set the token address and unitInterest_
     * @param _ring - address of ring
-    * @param _kton
+    * @param _kton - address of KTON
     */
     constructor (address _ring, address _kton) public {
         _setRING(_ring);
-        _setKton(_kton);
+        _setKTON(_kton);
         _setUnitInterest(500000000000000);
         _setPenaltyMultiplier(3);
+        _setInterestMultiplierUp(66);
+        _setInterestMultiplierDown(65);
     }
 
 
@@ -81,7 +83,7 @@ contract  GringottsBank is Ownable,BankBase {
 
     // @dev set UNIT_INTEREST;
     function setUnitInterest(uint _unitInterest) public onlyOwner {
-        setUnitInterest(_unitInterest);
+        _setUnitInterest(_unitInterest);
     }
 
     // @dev set UNIT_INTEREST;
@@ -98,6 +100,16 @@ contract  GringottsBank is Ownable,BankBase {
     // @dev set KTON
     function setKTON(address _kton) public onlyOwner {
         _setKTON(_kton);
+    }
+
+    // @dev set interestMultiplierUp_
+    function setInterestMultiplierUp(uint _up) public onlyOwner {
+        _setInterestMultiplierUp(_up);
+    }
+
+    // @dev set interestMultiplierDown_
+    function setInterestMultiplierDown(uint _down) public onlyOwner {
+        _setInterestMultiplierDown(_down);
     }
 
 
