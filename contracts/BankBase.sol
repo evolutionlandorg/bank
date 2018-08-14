@@ -51,6 +51,8 @@ contract BankBase {
     // claimedToken event
     event ClaimedTokens(address indexed _token, address indexed _owner, uint _amount);
 
+    // sucessful deposit
+    event Deposited(address indexed _depositor, uint256 indexed _depositID);
 
 
 
@@ -90,6 +92,7 @@ contract BankBase {
         // give the player interest immediately
         uint interest = _computeInterest(_value, _month);
         require(kryptonite_.transfer(_depositor,interest));
+        emit Deposited(_depositor, depositID);
     }
 
     function _claimBack(address _depositor,uint _value, uint _depositID) internal {

@@ -47,10 +47,11 @@ contract  GringottsBank is Ownable,BankBase {
 
     // normal Redemption, withdraw at maturity
     function claimBack(uint _depositID) public {
-
+        // palyer can only withdraw his/her own deposit
         Deposit storage depositEntity = playerDepositInfo_[msg.sender][_depositID];
 
         uint value = depositEntity.value;
+        require(value > 0, "wrong depositID")
         uint months = depositEntity.months;
         uint startAt = depositEntity.startAt;
         uint duration = now - startAt;
@@ -73,6 +74,11 @@ contract  GringottsBank is Ownable,BankBase {
         token.transfer(owner, balance);
 
         emit ClaimedTokens(_token, owner, balance);
+    }
+
+    // query penalty of a specific deposit at the moment of invoking
+    function getPenalty(address _depositor, uint _depositID) public returns (uint) {
+        _computePenaltyWithID(_depositor, _depositID);
     }
 
     // @dev set UNIT_INTEREST;
