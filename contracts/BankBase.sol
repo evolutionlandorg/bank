@@ -26,7 +26,7 @@ contract BankBase {
         uint startAt;
     }
 
-    uint public constant MONTH = 4 * 1 weeks;
+    uint public constant MONTH = 30 * 1 days;
 
     // amount of kryptonite after depositing 1 ring for 1 month
     uint public unitInterest_;
@@ -75,6 +75,7 @@ contract BankBase {
        * @param _month - Length of time from the deposit's beginning to end (in months).
     */
     function _deposit(address _depositor, uint _value, uint _month) canBeStoredWith128Bits(_value) canBeStoredWith128Bits(_month) internal {
+        require(_value > 0);
         require(_month <= 36 && _month >= 1);
         Deposit memory depositEntity = Deposit(uint128(_value), uint128(_month), now);
         // use current number of deposit from the _depositor as depositID
@@ -128,9 +129,10 @@ contract BankBase {
 
 
     function _computePenaltyWithID(address _depositor, uint _depositID) internal returns (uint){
-        Deposit memory depositEntity = playerDepositInfo_[_depositor][_depositID];
+        Deposit storage depositEntity = playerDepositInfo_[_depositor][_depositID];
 
         uint value = depositEntity.value;
+        require(value > 0);
         uint months = depositEntity.months;
         uint startAt = depositEntity.startAt;
         uint duration = now - startAt;
@@ -162,7 +164,7 @@ contract BankBase {
     }
 
     // @dev set KTON
-    function _setKton(address _kton) internal {
+    function _setKTON(address _kton) internal {
         kryptonite_ = ERC20(_kton);
     }
 
