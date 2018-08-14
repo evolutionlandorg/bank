@@ -1,6 +1,7 @@
 pragma solidity ^0.4.23;
 
 import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
+import './MintableERC20.sol';
 
 
 contract BankBase {
@@ -91,7 +92,8 @@ contract BankBase {
 
         // give the player interest immediately
         uint interest = _computeInterest(_value, _month);
-        require(kryptonite_.transfer(_depositor,interest));
+
+        require(MintableERC20(kryptonite_).mint(_depositor,interest));
         emit Deposited(_depositor, depositID);
     }
 
@@ -114,8 +116,8 @@ contract BankBase {
     */
     function _computeInterest(uint _value, uint _month) internal canBeStoredWith128Bits(_value) canBeStoredWith128Bits(_month) returns (uint) {
         // these two actually mean the multiplier is 1.006
-        uint numerator = 1006 ** uint128(_month);
-        uint denominator = 1000 ** uint128(_month);
+        uint numerator = uint256(67).pwr(uint128(_month));
+        uint denominator = uint256(66).pwr(uint128(_month));
 
         uint quotient;
         uint remainder;
@@ -124,9 +126,9 @@ contract BankBase {
             quotient := div(numerator, denominator)
             remainder := mod(numerator, denominator)
         }
-        // depositing 1 ring for 12 months, interest is about 1.015 KTON
+        // depositing 1 ring for 12 months, interest is about 1.005 KTON
         // and the multiplier is about 2.72
-        uint interest = (30 * unitInterest_ * uint128(_value) / 11) * ((quotient - 1) * 10**18 + remainder * 10**18 / denominator) / (10**36);
+        uint interest = (unitInterest_ * uint128(_value)) * ((quotient - 1) * 10**18 + remainder * 10**18 / denominator) / (10**36);
         return interest;
     }
 

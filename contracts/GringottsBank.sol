@@ -2,7 +2,7 @@ pragma solidity ^0.4.23;
 
 import "./BankBase.sol";
 import 'openzeppelin-solidity/contracts/ownership/Ownable.sol';
-import 'openzeppelin-solidity/contracts/token/ERC20/BurnableToken.sol';
+import './BurnableERC20.sol';
 
 
 contract  GringottsBank is Ownable,BankBase {
@@ -11,14 +11,12 @@ contract  GringottsBank is Ownable,BankBase {
     * @dev Bank's constructor which set the token address and unitInterest_
     * @param _ring - address of ring
     * @param _kton
-    * @param _unitInterest - interst of per ring per month, 0.0005 ring recommended
-    * @param _penaltyMultiplier
     */
-    constructor (address _ring, address _kton, uint _uintInterest, uint _penaltyMultiplier) public {
+    constructor (address _ring, address _kton) public {
         _setRING(_ring);
         _setKton(_kton);
-        _setUnitInterest(_uintInterest);
-        _setPenaltyMultiplier(_penaltyMultiplier);
+        _setUnitInterest(500000000000000);
+        _setPenaltyMultiplier(3);
     }
 
 
@@ -39,7 +37,7 @@ contract  GringottsBank is Ownable,BankBase {
             _claimBack(_from, value, depositID);
 
             // burn the KTON transferred in
-            BurnableToken(kryptonite_).burn(_amount);
+            BurnableERC20(kryptonite_).burn(_amount);
         }
 
     }
@@ -51,7 +49,7 @@ contract  GringottsBank is Ownable,BankBase {
         Deposit storage depositEntity = playerDepositInfo_[msg.sender][_depositID];
 
         uint value = depositEntity.value;
-        require(value > 0, "wrong depositID")
+        require(value > 0, "wrong depositID");
         uint months = depositEntity.months;
         uint startAt = depositEntity.startAt;
         uint duration = now - startAt;
