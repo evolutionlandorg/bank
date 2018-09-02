@@ -4,7 +4,7 @@ import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 import 'openzeppelin-solidity/contracts/ownership/Ownable.sol';
 import "evolutionlandcommon/contracts/interfaces/ISettingsRegistry.sol";
 import "./BankSettingIds.sol";
-import './interfaces/BurnableToken.sol';
+import './interfaces/IBurnableERC20.sol';
 
 
 contract  GringottsBank is Ownable, BankSettingIds {
@@ -88,7 +88,7 @@ contract  GringottsBank is Ownable, BankSettingIds {
             claimDeposit(_from, depositID, true);
 
             // burn the KTON transferred in
-            BurnableERC20(kryptonite_).burn(_amount);
+            IBurnableERC20(kryptonite_).burn(_amount);
         }
     }
 
