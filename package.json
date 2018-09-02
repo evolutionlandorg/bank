@@ -1,5 +1,4 @@
 {
-
   "name": "evolutionlandbank",
   "version": "1.0.0",
   "description": "",
@@ -8,6 +7,7 @@
     "test": "test"
   },
   "dependencies": {
+    "evolutionlandcommon": "^1.0.5",
     "openzeppelin-solidity": "^1.12.0"
   },
   "devDependencies": {},
@@ -25,5 +25,4 @@
     "url": "https://github.com/evolutionlandorg/bank/issues"
   },
   "homepage": "https://github.com/evolutionlandorg/bank#readme"
-
 }
