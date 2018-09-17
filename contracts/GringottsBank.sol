@@ -3,8 +3,9 @@ pragma solidity ^0.4.23;
 import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 import 'openzeppelin-solidity/contracts/ownership/Ownable.sol';
 import "evolutionlandcommon/contracts/interfaces/ISettingsRegistry.sol";
+import 'evolutionlandcommon/contracts/interfaces/IBurnableERC20.sol';
+import 'evolutionlandcommon/contracts/interfaces/IMintableERC20.sol';
 import "./BankSettingIds.sol";
-import './interfaces/IBurnableERC20.sol';
 
 
 contract  GringottsBank is Ownable, BankSettingIds {
@@ -39,7 +40,7 @@ contract  GringottsBank is Ownable, BankSettingIds {
         bool claimed;
     }
 
-    mapping (uint256 => Deposit) deposits_;
+    mapping (uint256 => Deposit) public deposits_;
 
     uint public depositCount_;
 
@@ -64,16 +65,22 @@ contract  GringottsBank is Ownable, BankSettingIds {
     * @param _ring - address of ring
     * @param _kton - address of kton
     */
-    constructor (address _ring, address _kton) public {
+    constructor (address _ring, address _kton, ISettingsRegistry _registry) public {
         ring_ = ERC20(_ring);
         kryptonite_ = ERC20(_kton);
+
+        registry_ = _registry;
+    }
+
+    function getDeposit(uint id) public constant returns (address, uint128, uint128, uint256, uint256, bool ) {
+        return (deposits_[id].depositor, deposits_[id].value, deposits_[id].months, 
+                    deposits_[id].startAt, deposits_[id].unitInterest, deposits_[id].claimed);
     }
 
     /*
-     *  Functions
+     *  Functions:
+     *  for deposit ring
      */
-
-    // for deposit ring
     function tokenFallback(address _from, uint256 _amount, bytes _data) public {
         // deposit entrance
         if(address(ring_) == msg.sender) {
@@ -88,7 +95,7 @@ contract  GringottsBank is Ownable, BankSettingIds {
             claimDeposit(_from, depositID, true);
 
             // burn the KTON transferred in
-            IBurnableERC20(kryptonite_).burn(_amount);
+            IBurnableERC20(kryptonite_).burn(address(this), _amount);
         }
     }
 
@@ -147,7 +154,7 @@ contract  GringottsBank is Ownable, BankSettingIds {
 
         // give the player interest immediately
         uint interest = _computeInterest(_value, _month, _unitInterest);
-        require(kryptonite_.transfer(_depositor, interest));
+        IMintableERC20(kryptonite_).mint(_depositor, interest);
         
         emit NewDeposit(_depositor, depositId);
     }
