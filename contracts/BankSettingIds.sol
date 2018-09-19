@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
-import 'evolutionlandcommon/contracts/SettingIds.sol';
-import 'evolutionlandcommon/contracts/interfaces/ISettingsRegistry.sol';
+import '@evolutionland/common/contracts/SettingIds.sol';
+import '@evolutionland/common/contracts/interfaces/ISettingsRegistry.sol';
 
 contract BankSettingIds is SettingIds {
 

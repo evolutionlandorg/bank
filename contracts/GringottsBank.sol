@@ -2,9 +2,9 @@ pragma solidity ^0.4.23;
 
 import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 import 'openzeppelin-solidity/contracts/ownership/Ownable.sol';
-import "evolutionlandcommon/contracts/interfaces/ISettingsRegistry.sol";
-import 'evolutionlandcommon/contracts/interfaces/IBurnableERC20.sol';
-import 'evolutionlandcommon/contracts/interfaces/IMintableERC20.sol';
+import "@evolutionland/common/contracts/interfaces/ISettingsRegistry.sol";
+import '@evolutionland/common/contracts/interfaces/IBurnableERC20.sol';
+import '@evolutionland/common/contracts/interfaces/IMintableERC20.sol';
 import "./BankSettingIds.sol";
 
 
