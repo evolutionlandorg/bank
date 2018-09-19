@@ -1,5 +1,8 @@
 pragma solidity ^0.4.23;
 
+import "evolutionlandcommon/contracts/StandardERC223.sol";
+import "evolutionlandcommon/contracts/SettingsRegistry.sol";
+
 contract Migrations {
   address public owner;
   uint public last_completed_migration;

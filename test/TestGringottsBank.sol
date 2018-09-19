@@ -5,7 +5,6 @@ import "truffle/DeployedAddresses.sol";
 import "../contracts/GringottsBank.sol";
 import "evolutionlandcommon/contracts/StandardERC223.sol";
 import "evolutionlandcommon/contracts/SettingsRegistry.sol";
-import "evolutionlandcommon/contracts/interfaces/ISettingsRegistry.sol";
 
 contract TestGringottsBank {
     function testInitialBalanceUsingDeployedContract() {
@@ -24,11 +23,11 @@ contract TestGringottsBank {
 
         StandardERC223 kton = new StandardERC223("KTON");
         GringottsBank bank = new GringottsBank(ring, kton, registry);
-        kton.setOwner(bank);
-        bank.loadDefaultSettings(registry);
+        // kton.setOwner(bank);
+        // bank.loadDefaultSettings(registry);
 
         // this._deposit()
-        ring.transferFrom(address(this), bank, 0x0);
+        //ring.transferFrom(address(this), bank, 0x0);
 
         uint expected = 10000;
         var (,value,,,,) = bank.getDeposit(0);
