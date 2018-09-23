@@ -15,11 +15,4 @@ contract BankSettingIds is SettingIds {
     // default: 3
     // uint public penaltyMultiplier_;
     bytes32 public constant UINT_BANK_PENALTY_MULTIPLIER = "UINT_BANK_PENALTY_MULTIPLIER";
-
-    function loadDefaultSettings(address _registry) public {
-        // TODO:  
-        ISettingsRegistry(_registry).setUintProperty(UINT_BANK_UNIT_INTEREST, 10000);
-        ISettingsRegistry(_registry).setUintProperty(UINT_BANK_PENALTY_MULTIPLIER, 3);
-    }
-
 }
