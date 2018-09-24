@@ -165,6 +165,7 @@ contract  GringottsBank is Ownable, BankSettingIds {
     */
     function computeInterest(uint _value, uint _month, uint _unitInterest) 
         public canBeStoredWith128Bits(_value) canBeStoredWith128Bits(_month) pure returns (uint) {
+        require(_value <= 10000000000 * 10**18);
         // these two actually mean the multiplier is 1.015
         uint numerator = 67 ** _month;
         uint denominator = 66 ** _month;
