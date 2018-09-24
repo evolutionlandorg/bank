@@ -165,10 +165,9 @@ contract  GringottsBank is Ownable, BankSettingIds {
     */
     function computeInterest(uint _value, uint _month, uint _unitInterest) 
         public canBeStoredWith128Bits(_value) canBeStoredWith128Bits(_month) pure returns (uint) {
-        // these two actually mean the multiplier is 1.006
-        uint numerator = 1006 ** uint128(_month);
-        uint denominator = 1000 ** uint128(_month);
-
+        // these two actually mean the multiplier is 1.015
+        uint numerator = 67 ** _month;
+        uint denominator = 66 ** _month;
         uint quotient;
         uint remainder;
 
@@ -176,9 +175,9 @@ contract  GringottsBank is Ownable, BankSettingIds {
             quotient := div(numerator, denominator)
             remainder := mod(numerator, denominator)
         }
-        // depositing 1 ring for 12 months, interest is about 1.015 KTON
+        // depositing 1 ring for 12 months, interest is about 0.999999999999999999 KTON
         // and the multiplier is about 2.72
-        return (30 * _unitInterest * uint128(_value) / 11) * ((quotient - 1) * 10**18 + remainder * 10**18 / denominator) / (10**36);
+        return (100 * _unitInterest * uint128(_value) / 95) * ((quotient - 1) * 100 + remainder * 100 / denominator) / (10**6);
     }
 
 
