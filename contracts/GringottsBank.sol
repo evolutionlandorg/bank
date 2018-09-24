@@ -74,7 +74,7 @@ contract  GringottsBank is Ownable, BankSettingIds {
 
     function getDeposit(uint id) public constant returns (address, uint128, uint128, uint256, uint256, bool ) {
         return (deposits_[id].depositor, deposits_[id].value, deposits_[id].months, 
-                    deposits_[id].startAt, deposits_[id].unitInterest, deposits_[id].claimed);
+            deposits_[id].startAt, deposits_[id].unitInterest, deposits_[id].claimed);
     }
 
     /*
@@ -84,13 +84,13 @@ contract  GringottsBank is Ownable, BankSettingIds {
     function tokenFallback(address _from, uint256 _amount, bytes _data) public {
         // deposit entrance
         if(address(ring_) == msg.sender) {
-            uint months = bytesToUint256(_data);
+            uint months = bytesToUint256(_data, 0);
             _deposit(_from, _amount, months);
         }
         //  Early Redemption entrance
         if (address(kryptonite_) == msg.sender) {
-            uint depositID = bytesToUint256(_data);
-            require(_amount >= _computePenalty(depositID));
+            uint depositID = bytesToUint256(_data, 0);
+            require(_amount >= computePenalty(depositID));
 
             claimDeposit(_from, depositID, true);
 
@@ -134,7 +134,6 @@ contract  GringottsBank is Ownable, BankSettingIds {
 
         depositId = depositCount_;
 
-
         uint _unitInterest = registry_.uintOf(BankSettingIds.UINT_BANK_UNIT_INTEREST);
 
         deposits_[depositId] = Deposit({
@@ -145,7 +144,7 @@ contract  GringottsBank is Ownable, BankSettingIds {
             unitInterest: _unitInterest,
             claimed: false
         });
-
+        
         depositCount_ += 1;
 
         playerDeposits_[_depositor].push(depositId);
@@ -153,7 +152,7 @@ contract  GringottsBank is Ownable, BankSettingIds {
         playerTotalDeposit_[_depositor] += _value;
 
         // give the player interest immediately
-        uint interest = _computeInterest(_value, _month, _unitInterest);
+        uint interest = computeInterest(_value, _month, _unitInterest);
         IMintableERC20(kryptonite_).mint(_depositor, interest);
         
         emit NewDeposit(_depositor, depositId);
@@ -164,7 +163,8 @@ contract  GringottsBank is Ownable, BankSettingIds {
         * @param _value - Amount of ring  (in deceimal units)
         * @param _month - Length of time from the deposit's beginning to end (in months).
     */
-    function _computeInterest(uint _value, uint _month, uint _unitInterest) internal canBeStoredWith128Bits(_value) canBeStoredWith128Bits(_month) pure returns (uint) {
+    function computeInterest(uint _value, uint _month, uint _unitInterest) 
+        public canBeStoredWith128Bits(_value) canBeStoredWith128Bits(_month) pure returns (uint) {
         // these two actually mean the multiplier is 1.006
         uint numerator = 1006 ** uint128(_month);
         uint denominator = 1000 ** uint128(_month);
@@ -182,24 +182,42 @@ contract  GringottsBank is Ownable, BankSettingIds {
     }
 
 
-    function _computePenalty(uint _depositID) internal returns (uint) {
+    function computePenalty(uint _depositID) internal returns (uint) {
         uint startAt = deposits_[_depositID].startAt;
         uint duration = now - startAt;
         uint depositMonth = duration / MONTH;
 
-        uint penalty = registry_.uintOf(BankSettingIds.UINT_BANK_PENALTY_MULTIPLIER) * (_computeInterest(deposits_[_depositID].value, deposits_[_depositID].months, deposits_[_depositID].unitInterest) - _computeInterest(deposits_[_depositID].value, depositMonth, deposits_[_depositID].unitInterest));
+        uint penalty = registry_.uintOf(BankSettingIds.UINT_BANK_PENALTY_MULTIPLIER) * (computeInterest(deposits_[_depositID].value, deposits_[_depositID].months, deposits_[_depositID].unitInterest) - computeInterest(deposits_[_depositID].value, depositMonth, deposits_[_depositID].unitInterest));
 
 
         return penalty;
     }
 
-    function bytesToUint256(bytes b) public pure returns (uint256) {
+    function bytesToUint256(bytes _bytes, uint8 _offset) public pure returns (uint256) {
+        require(_offset < _bytes.length, "offset should small than length");
+        uint256 m = 0;
+        uint256 b = 0;
+        uint256 l = 32;
+
+        if (_bytes.length - _offset < l) {
+            l = _bytes.length - _offset;
+        }
+
+        for (uint8 i = 0; i < l; i++) {
+            m *= 256;
+            b = uint160(_bytes[_offset + i]);
+            m += b;
+        }
+
+        return m;
+        /*
         bytes32 out;
 
         for (uint i = 0; i < 32; i++) {
             out |= bytes32(b[i] & 0xFF) >> (i * 8);
         }
         return uint256(out);
+        */
     }
 
     /// @notice This method can be used by the owner to extract mistakenly
