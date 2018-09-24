@@ -182,7 +182,7 @@ contract  GringottsBank is Ownable, BankSettingIds {
     }
 
 
-    function computePenalty(uint _depositID) internal returns (uint) {
+    function computePenalty(uint _depositID) public view returns (uint) {
         uint startAt = deposits_[_depositID].startAt;
         uint duration = now - startAt;
         uint depositMonth = duration / MONTH;
