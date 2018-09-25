@@ -176,9 +176,9 @@ contract  GringottsBank is Ownable, BankSettingIds {
             quotient := div(numerator, denominator)
             remainder := mod(numerator, denominator)
         }
-        // depositing 1 ring for 12 months, interest is about 0.999999999999999999 KTON
-        // and the multiplier is about 2.72
-        return (100 * _unitInterest * uint128(_value) / 95) * ((quotient - 1) * 100 + remainder * 100 / denominator) / (10**6);
+        // depositing 10000 RING for 12 months, interest is about 1 KTON
+        // and the multiplier is about 3
+        return (5 * _unitInterest * uint128(_value) / 95) * ((quotient - 1) * 100 + remainder * 100 / denominator) / (10**6);
     }
 
 
