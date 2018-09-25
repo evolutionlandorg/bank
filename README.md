@@ -3,7 +3,7 @@
 ### abstract
 GringottsBank is a virtual bank in evolution land. It is a magic place it can give you kryptonite(KTON, an ERC20 token) as interest if you deposit RING into it.
 
-kryptonite is also used to buy land assets in evolution land. Specifically, players can only buy the reserved land assets with kryptonite.
+kryptonite can also used to buy land assets in evolution land. Specifically, players can only buy the reserved land and other special lands with kryptonite.
 
 ### deployment
 deploy contract `GringottsBank`.
