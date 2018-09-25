@@ -36,7 +36,7 @@ contract('Gringotts Bank Test', async(accounts) => {
         let bank_unit_interest = await registry.uintOf(await bank.UINT_BANK_UNIT_INTEREST.call());
         let bank_penalty_multiplier = await registry.uintOf(await bank.UINT_BANK_PENALTY_MULTIPLIER.call());
 
-        assert.equal(bank_unit_interest, 100)
+        assert.equal(bank_unit_interest, 1000)
         assert.equal(bank_penalty_multiplier, 3)
     })
 
