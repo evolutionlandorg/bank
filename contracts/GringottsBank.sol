@@ -84,12 +84,12 @@ contract  GringottsBank is Ownable, BankSettingIds {
     function tokenFallback(address _from, uint256 _amount, bytes _data) public {
         // deposit entrance
         if(address(ring_) == msg.sender) {
-            uint months = bytesToUint256(_data, 0);
+            uint months = bytesToUint256(_data);
             _deposit(_from, _amount, months);
         }
         //  Early Redemption entrance
         if (address(kryptonite_) == msg.sender) {
-            uint depositID = bytesToUint256(_data, 0);
+            uint depositID = bytesToUint256(_data);
             require(_amount >= computePenalty(depositID));
 
             claimDeposit(_from, depositID, true);
@@ -193,31 +193,11 @@ contract  GringottsBank is Ownable, BankSettingIds {
         return penalty;
     }
 
-    function bytesToUint256(bytes _bytes, uint8 _offset) public pure returns (uint256) {
-        require(_offset < _bytes.length, "offset should small than length");
-        uint256 m = 0;
-        uint256 b = 0;
-        uint256 l = 32;
-
-        if (_bytes.length - _offset < l) {
-            l = _bytes.length - _offset;
+    function bytesToUint256(bytes _encodedParam) public pure returns (uint256 a) {
+        /* solium-disable-next-line security/no-inline-assembly */
+        assembly {
+            a := mload(add(_encodedParam, /*BYTES_HEADER_SIZE*/32))
         }
-
-        for (uint8 i = 0; i < l; i++) {
-            m *= 256;
-            b = uint160(_bytes[_offset + i]);
-            m += b;
-        }
-
-        return m;
-        /*
-        bytes32 out;
-
-        for (uint i = 0; i < 32; i++) {
-            out |= bytes32(b[i] & 0xFF) >> (i * 8);
-        }
-        return uint256(out);
-        */
     }
 
     /// @notice This method can be used by the owner to extract mistakenly

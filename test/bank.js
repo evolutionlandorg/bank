@@ -1,3 +1,5 @@
+var abi = require('ethereumjs-abi')
+
 const StandardERC223 = artifacts.require('StandardERC223');
 const SettingsRegistry = artifacts.require('SettingsRegistry');
 const GringottsBank = artifacts.require('GringottsBank');
@@ -5,7 +7,7 @@ const GringottsBank = artifacts.require('GringottsBank');
 const gasPrice = 22000000000;
 const COIN = 10 ** 18;
 
-contract('Gringotts Bank test', async(accounts) => {
+contract('Gringotts Bank Test', async(accounts) => {
     let deployer = accounts[0];
     let investor = accounts[1];
     let bank;
@@ -27,7 +29,7 @@ contract('Gringotts Bank test', async(accounts) => {
         console.log('KTON address: ', kton.address);
 
         // give some ring to investor
-        await ring.mint(investor, 10000 * COIN, { from:deployer } );
+        await ring.mint(investor, 100000 * COIN, { from:deployer } );
     })
 
     it('bank setting should be same as registry initialization', async() => {
@@ -39,11 +41,11 @@ contract('Gringotts Bank test', async(accounts) => {
     })
 
     it('should return correct amount of KTON', async() => {
-        // deposit 100 RING for 1 month
-        await ring.contract.transfer['address,uint256,bytes']( bank.address, 100 * COIN, '0x01'/*web3.toHex(1)*/, { from: investor, gas: 300000 });
-        // let ktonAmount = await kton.balanceOf(investor);
-        //
-        // assert.equal(ktonAmount, 199);
+        // deposit 100 RING for 1 year
+        await ring.contract.transfer['address,uint256,bytes']( bank.address, 10000 * COIN, '0x' + abi.rawEncode(['uint256'], [12]).toString('hex'), { from: investor, gas: 300000 });
+        let ktonAmount = await kton.balanceOf(investor);
+        
+        assert.equal(ktonAmount.toNumber(), 1 * COIN);
         // using the way to call overloaded functions.
         //let tx = ring.contract.transfer['address,uint256,bytes'](bank.address, 100 * 10**18, "0x1", {from:deployer});
         //console.log(tx);
@@ -62,6 +64,10 @@ contract('Gringotts Bank test', async(accounts) => {
     })
 
     it('test bytesToUint256', async() => {
+        console.log('0x' + abi.rawEncode(['uint256'], [12]).toString('hex'));
+        let x = await bank.bytesToUint256.call('0x' + abi.rawEncode(['uint256'], [12]).toString('hex'));
+
+        assert.equal(x, 12);
     })
 
 })
