@@ -40,7 +40,7 @@ contract('Gringotts Bank test', async(accounts) => {
 
     it('should return correct amount of KTON', async() => {
         // deposit 100 RING for 1 month
-        await ring.contract.transfer['address,uint256,bytes']( bank.address, 100 * COIN, web3.toHex(1), { from: investor });
+        await ring.contract.transfer['address,uint256,bytes']( bank.address, 100 * COIN, '0x01'/*web3.toHex(1)*/, { from: investor, gas: 300000 });
         // let ktonAmount = await kton.balanceOf(investor);
         //
         // assert.equal(ktonAmount, 199);
