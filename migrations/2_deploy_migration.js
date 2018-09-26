@@ -16,7 +16,7 @@ function deployOnLocal(deployer, network, accounts) {
     console.log(network);
 
     let conf = {
-      bank_unit_interest: 1015 * 10**15,
+      bank_unit_interest: 5,
       bank_penalty_multiplier: 3
     }
 
