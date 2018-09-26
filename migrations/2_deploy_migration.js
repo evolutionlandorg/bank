@@ -2,6 +2,7 @@ const GringottsBank = artifacts.require("./GringottsBank.sol");
 const SettingsRegistry = artifacts.require("./SettingsRegistry.sol");
 const StandardERC223 = artifacts.require("./StandardERC223.sol");
 const DeployAndTest = artifacts.require("./DeployAndTest.sol");
+const BankAuthority = artifacts.require("./BankAuthority.sol");
 
 module.exports = function(deployer, network, accounts) {
     if (network == "developement")
@@ -31,8 +32,12 @@ function deployOnLocal(deployer, network, accounts) {
         console.log("Loging: ring..." + ring);
         return deployer.deploy(GringottsBank, ring, kton, SettingsRegistry.address);
     }).then(async () => {
-        console.log("Loging: change owner");
         console.log("Loging: bank..." + GringottsBank.address);
+
+        return deployer.deploy(BankAuthority, GringottsBank.address);
+    }).then(async () => {
+        console.log("Loging: set bank authority.");
+        
         let deployAndTest = await DeployAndTest.deployed();
 
         let ring  =  await deployAndTest.testRING.call();
@@ -50,7 +55,9 @@ function deployOnLocal(deployer, network, accounts) {
         let bank_penalty_multiplier = await bank.UINT_BANK_PENALTY_MULTIPLIER.call();
         await registry.setUintProperty(bank_penalty_multiplier, conf.bank_penalty_multiplier);
 
-        await StandardERC223.at(kton).setOwner(GringottsBank.address);
+        console.log("Loging: set bank authority.");
+        // await StandardERC223.at(kton).setOwner(GringottsBank.address);
+        await StandardERC223.at(kton).setAuthority(BankAuthority.address);
 
         let interest = await bank.computeInterest.call(10000, 12, conf.bank_unit_interest);
         console.log("Current annual interest for 10000 RING is: ... " + interest + " KTON");
