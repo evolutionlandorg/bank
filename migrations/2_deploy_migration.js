@@ -53,6 +53,6 @@ function deployOnLocal(deployer, network, accounts) {
         await StandardERC223.at(kton).setOwner(GringottsBank.address);
 
         let interest = await bank.computeInterest.call(10000, 12, conf.bank_unit_interest);
-        console.log("Current annual interest for 10,000 RING is: ... " + interest + " KTON");
+        console.log("Current annual interest for 10000 RING is: ... " + interest + " KTON");
     });
 }
