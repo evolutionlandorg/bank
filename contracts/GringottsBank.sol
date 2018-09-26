@@ -220,7 +220,15 @@ contract  GringottsBank is Ownable, BankSettingIds {
         return (_unitInterest * uint128(_value)) * ((quotient - 1) * 1000 + remainder * 1000 / denominator) / (197 * 10**7);
     }
 
+    function isClaimRequirePenalty(uint _depositID) public view returns (bool) {
+        return (deposits[_depositID].startAt > 0 && 
+                !deposits[_depositID].claimed && 
+                (now - deposits[_depositID].startAt < deposits[_depositID].months * MONTH ));
+    }
+
     function computePenalty(uint _depositID) public view returns (uint) {
+        require(isClaimRequirePenalty(_depositID), "Claim do not need Penalty.");
+
         uint startAt = deposits[_depositID].startAt;
         uint duration = now - startAt;
         uint depositMonth = duration / MONTH;
