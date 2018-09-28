@@ -226,15 +226,13 @@ contract  GringottsBank is Ownable, BankSettingIds {
                 (now - deposits[_depositID].startAt < deposits[_depositID].months * MONTH ));
     }
 
-    function computePenalty(uint _depositID) public view returns (uint) {
+    function computePenalty(uint _depositID) public view returns (uint256) {
         require(isClaimRequirePenalty(_depositID), "Claim do not need Penalty.");
 
-        uint startAt = deposits[_depositID].startAt;
-        uint duration = now - startAt;
-        uint depositMonth = duration / MONTH;
+        uint256 monthsDuration = (now - deposits[_depositID].startAt) / MONTH;
 
-        uint penalty = registry.uintOf(BankSettingIds.UINT_BANK_PENALTY_MULTIPLIER) * 
-            (computeInterest(deposits[_depositID].value, deposits[_depositID].months, deposits[_depositID].unitInterest) - computeInterest(deposits[_depositID].value, depositMonth, deposits[_depositID].unitInterest));
+        uint256 penalty = registry.uintOf(BankSettingIds.UINT_BANK_PENALTY_MULTIPLIER) * 
+            (computeInterest(deposits[_depositID].value, deposits[_depositID].months, deposits[_depositID].unitInterest) - computeInterest(deposits[_depositID].value, monthsDuration, deposits[_depositID].unitInterest));
 
 
         return penalty;
