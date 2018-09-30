@@ -3,6 +3,7 @@ const SettingsRegistry = artifacts.require("./SettingsRegistry.sol");
 const StandardERC223 = artifacts.require("./StandardERC223.sol");
 const DeployAndTest = artifacts.require("./DeployAndTest.sol");
 const BankAuthority = artifacts.require("./BankAuthority.sol");
+const GringottsBankProxy = artifacts.require("./OwnedUpgradeabilityProxy.sol")
 
 module.exports = function(deployer, network, accounts) {
     if (network == "developement")
@@ -23,21 +24,27 @@ function deployOnLocal(deployer, network, accounts) {
 
     deployer.deploy([
         SettingsRegistry,
-        DeployAndTest
+        DeployAndTest,
+        GringottsBankProxy
     ]).then(async () => {
         return deployer.deploy(GringottsBank);
     }).then(async () => {
-        console.log("Loging: bank..." + GringottsBank.address);
+        console.log("Loging: proxy... " + GringottsBankProxy.address);
+        console.log("Loging: bank... " + GringottsBank.address);
         let bank = await GringottsBank.deployed();
+        let proxy = await GringottsBankProxy.deployed();
+        await proxy.upgradeTo(GringottsBank.address);
+
+        let bankProxy = await GringottsBank.at(GringottsBankProxy.address);
 
         let instance = await DeployAndTest.deployed();
 
         let ring  =  await instance.testRING.call();
         let kton  =  await instance.testKTON.call();
         console.log("Loging: ring..." + ring);
-        await bank.initializeContract(ring, kton, SettingsRegistry.address);
+        await bankProxy.initializeContract(ring, kton, SettingsRegistry.address);
 
-        return deployer.deploy(BankAuthority, GringottsBank.address);
+        return deployer.deploy(BankAuthority, GringottsBankProxy.address);
     }).then(async () => {
         console.log("Loging: set bank authority.");
         
@@ -46,7 +53,7 @@ function deployOnLocal(deployer, network, accounts) {
         let ring  =  await deployAndTest.testRING.call();
         let kton  =  await deployAndTest.testKTON.call();
 
-        let bank = await GringottsBank.deployed();
+        let bank = await GringottsBank.at(GringottsBankProxy.address); // await GringottsBankProxy.deployed();
 
         let registry = await SettingsRegistry.deployed();
 

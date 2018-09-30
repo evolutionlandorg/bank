@@ -3,6 +3,7 @@ var abi = require('ethereumjs-abi')
 const StandardERC223 = artifacts.require('StandardERC223');
 const SettingsRegistry = artifacts.require('SettingsRegistry');
 const GringottsBank = artifacts.require('GringottsBank');
+const GringottsBankProxy = artifacts.require("./OwnedUpgradeabilityProxy.sol")
 
 const gasPrice = 22000000000;
 const COIN = 10 ** 18;
@@ -40,7 +41,7 @@ contract('Gringotts Bank Test', async(accounts) => {
 
     before('deploy and configure', async() => {
         // get contract from deployed version
-        bank     = await GringottsBank.deployed();
+        bank     = await GringottsBank.at(GringottsBankProxy.address); //await GringottsBank.deployed();
         registry = await SettingsRegistry.deployed();
 
         ring = StandardERC223.at(await bank.ring.call())

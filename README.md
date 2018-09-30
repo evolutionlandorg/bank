@@ -30,7 +30,7 @@ invoke
 kryptonite_.transfer(address_of_GringottsBank, amount_of_KTON_as_penalty, _data)
 ```
 
-Test addresses on Kovan network.
+### 4.Test addresses on Kovan network.
 ```
 KTON: 0x32965b675355e07c7172D543D00bfa85f71f1D37
 BANK: 0xa32adc22731bb80e572110c2fdb1f41dd2752e37
