@@ -25,14 +25,17 @@ function deployOnLocal(deployer, network, accounts) {
         SettingsRegistry,
         DeployAndTest
     ]).then(async () => {
+        return deployer.deploy(GringottsBank);
+    }).then(async () => {
+        console.log("Loging: bank..." + GringottsBank.address);
+        let bank = await GringottsBank.deployed();
+
         let instance = await DeployAndTest.deployed();
 
         let ring  =  await instance.testRING.call();
         let kton  =  await instance.testKTON.call();
         console.log("Loging: ring..." + ring);
-        return deployer.deploy(GringottsBank, ring, kton, SettingsRegistry.address);
-    }).then(async () => {
-        console.log("Loging: bank..." + GringottsBank.address);
+        await bank.initializeContract(ring, kton, SettingsRegistry.address);
 
         return deployer.deploy(BankAuthority, GringottsBank.address);
     }).then(async () => {

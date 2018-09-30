@@ -52,9 +52,17 @@ contract  GringottsBank is Ownable, BankSettingIds {
     // player => totalDepositRING, total number of ring that the player has deposited
     mapping (address => uint256) public userTotalDeposit;
 
+    bool private singletonLock = false;
+
     /*
      *  Modifiers
      */
+    modifier singletonLockCall() {
+        require(!singletonLock, "Only can call once");
+        _;
+        singletonLock = true;
+    }
+
     modifier canBeStoredWith128Bits(uint256 _value) {
         require(_value < 340282366920938463463374607431768211455);
         _;
@@ -62,11 +70,22 @@ contract  GringottsBank is Ownable, BankSettingIds {
 
     /**
      * @dev Bank's constructor which set the token address and unitInterest_
+     */
+    constructor () public {
+        // initializeContract(_ring, _kton, _registry);
+    }
+
+    /**
+     * @dev Same with constructor, but is used and called by storage proxy as logic contract.
      * @param _ring - address of ring
      * @param _kton - address of kton
      * @param _registry - address of SettingsRegistry
      */
-    constructor (address _ring, address _kton, address _registry) public {
+    function initializeContract(address _ring, address _kton, address _registry) public singletonLockCall {
+        // call Ownable's constructor
+        owner = msg.sender;
+
+        // call bank's constructor
         ring = ERC20(_ring);
         kryptonite = ERC20(_kton);
 
