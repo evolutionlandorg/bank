@@ -17,6 +17,8 @@ contract  GringottsBank is Ownable, BankSettingIds {
 
     event ClaimedDeposit(uint256 indexed _depositID, address indexed _depositor, uint _value, bool isPenalty);
 
+    event TransferDeposit(uint256 indexed _depositID, address indexed _oldDepositor, address indexed _newDepositor);
+
     /*
      *  Constants
      */
@@ -158,11 +160,48 @@ contract  GringottsBank is Ownable, BankSettingIds {
 
     }
 
+    function transferDeposit(address _benificiary, uint _depositID) public {
+        require(deposits[_depositID].depositor == msg.sender, "Depositor must be the msg.sender");
+        require(_benificiary != 0x0, "Benificiary can not be zero");
+        require(deposits[_depositID].claimed == false, "Already claimed, can not transfer.");
+
+        // update the depositor of the deposit.
+        deposits[_depositID].depositor = _benificiary;
+        
+        // update the deposit ids of the original user and new user.
+        bool found = false;
+        for(uint i = 0 ; i < userDeposits[msg.sender].length; i++)
+        {
+            if (!found && userDeposits[msg.sender][i] == _depositID){
+                found = true;
+                delete userDeposits[msg.sender][i];
+            }
+
+            if (found && i < userDeposits[msg.sender].length - 1)
+            {
+                // shifts value to left
+                userDeposits[msg.sender][i] =  userDeposits[msg.sender][i+1];
+            }
+        }
+
+        delete userDeposits[msg.sender][userDeposits[msg.sender].length-1];
+        //reducing the length
+        userDeposits[msg.sender].length--;
+
+        userDeposits[_benificiary].push(_depositID);
+
+        // update the balance of the original depositor and new depositor.
+        userTotalDeposit[msg.sender] -= deposits[_depositID].value;
+        userTotalDeposit[_benificiary] += deposits[_depositID].value;
+
+        emit TransferDeposit(_depositID, msg.sender, _benificiary);
+    }
+
     // normal Redemption, withdraw at maturity
     function _claimDeposit(address _depositor, uint _depositID, bool isPenalty) internal {
         require(deposits[_depositID].startAt > 0, "Deposit not created.");
         require(deposits[_depositID].claimed == false, "Already claimed");
-        require(deposits[_depositID].depositor == _depositor);
+        require(deposits[_depositID].depositor == _depositor, "Depositor must match.");
 
         if (isPenalty) {
             require(now - deposits[_depositID].startAt < deposits[_depositID].months * MONTH );
@@ -186,7 +225,7 @@ contract  GringottsBank is Ownable, BankSettingIds {
      */
     function _deposit(address _depositor, uint _value, uint _month) 
         canBeStoredWith128Bits(_value) canBeStoredWith128Bits(_month) internal returns (uint _depositId) {
-        require( _value > 0 );
+        require( _value > 0 );  // because the _value is pass in from token transfer, token transfer will help check, so there should not be overflow issues.
         require( _month <= 36 && _month >= 1 );
 
         _depositId = depositCount;

@@ -34,6 +34,7 @@ const increaseTime = function(duration) {
 contract('Gringotts Bank Test', async(accounts) => {
     let deployer = accounts[0];
     let investor = accounts[1];
+    let investor2 = accounts[2];
     let bank;
     let registry;
     let ring;
@@ -120,6 +121,18 @@ contract('Gringotts Bank Test', async(accounts) => {
         
         assert.equal(ktonAmount2.toNumber(), 1 * COIN);
 
+    })
+
+    it('should transfer owner of deposit successful', async() => {
+        await bank.transferDeposit(investor2, 1, {from: investor, gas: 300000});
+        let deposit = await bank.getDeposit.call(1);
+
+        let depositId = await bank.userDeposits.call(investor2, 0);
+
+        assert.equal(deposit[0], investor2);
+        assert.equal(depositId, 1);
+
+        await bank.transferDeposit(investor, 1, {from: investor2, gas: 300000});
     })
 
     // need help with timecop
