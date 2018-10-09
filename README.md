@@ -32,8 +32,9 @@ kryptonite_.transfer(address_of_GringottsBank, amount_of_KTON_as_penalty, _data)
 
 ### 4.Test addresses on Kovan network.
 ```
-KTON: 0x32965b675355e07c7172D543D00bfa85f71f1D37
-BANK: 0xa32adc22731bb80e572110c2fdb1f41dd2752e37
+KTON: 0x8567dc449cf023e4eedcad2e0434fdbd184eb704
+bankProxy: 0x17bc59de30f0b9f06697d3cdea3355f405ba3b98
+bankLogic: 0x26af35e4a91cbffc494065f3733e2f21ab6fd06e
 ```
 
 
