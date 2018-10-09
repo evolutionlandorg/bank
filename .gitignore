@@ -5,4 +5,4 @@ package-lock.json
 .idea
 truffle.js
 contracts-flattener
-2_deploy_migration.js.kovan
+2_deploy_migration.js.*

@@ -3,24 +3,22 @@ const SettingsRegistry = artifacts.require("./SettingsRegistry.sol");
 const StandardERC223 = artifacts.require("./StandardERC223.sol");
 const DeployAndTest = artifacts.require("./DeployAndTest.sol");
 const BankAuthority = artifacts.require("./BankAuthority.sol");
-const GringottsBankProxy = artifacts.require("./OwnedUpgradeabilityProxy.sol")
+const GringottsBankProxy = artifacts.require("OwnedUpgradeabilityProxy")
+
+const conf = {
+    bank_unit_interest: 1000,
+    bank_penalty_multiplier: 3
+}
 
 module.exports = function(deployer, network, accounts) {
     if (network == "developement")
     {
-        deployOnLocal(deployer, network, accounts);
-    } else {
         deployOnLocal(deployer, network, accounts);
     }
 };
 
 function deployOnLocal(deployer, network, accounts) {
     console.log(network);
-
-    let conf = {
-      bank_unit_interest: 1000,
-      bank_penalty_multiplier: 3
-    }
 
     deployer.deploy([
         SettingsRegistry,
