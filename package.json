@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@evolutionland/common": "^1.0.14",
+    "@evolutionland/upgraeability-using-unstructured-storage": "^0.1.1",
     "ethereumjs-abi": "^0.6.5",
     "openzeppelin-solidity": "^1.12.0",
     "truffle-hdwallet-provider": "0.0.6"

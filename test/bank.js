@@ -3,6 +3,7 @@ var abi = require('ethereumjs-abi')
 const StandardERC223 = artifacts.require('StandardERC223');
 const SettingsRegistry = artifacts.require('SettingsRegistry');
 const GringottsBank = artifacts.require('GringottsBank');
+const GringottsBankProxy = artifacts.require("./OwnedUpgradeabilityProxy.sol")
 
 const gasPrice = 22000000000;
 const COIN = 10 ** 18;
@@ -33,6 +34,7 @@ const increaseTime = function(duration) {
 contract('Gringotts Bank Test', async(accounts) => {
     let deployer = accounts[0];
     let investor = accounts[1];
+    let investor2 = accounts[2];
     let bank;
     let registry;
     let ring;
@@ -40,7 +42,7 @@ contract('Gringotts Bank Test', async(accounts) => {
 
     before('deploy and configure', async() => {
         // get contract from deployed version
-        bank     = await GringottsBank.deployed();
+        bank     = await GringottsBank.at(GringottsBankProxy.address); //await GringottsBank.deployed();
         registry = await SettingsRegistry.deployed();
 
         ring = StandardERC223.at(await bank.ring.call())
@@ -66,21 +68,13 @@ contract('Gringotts Bank Test', async(accounts) => {
     it('should return correct amount of KTON', async() => {
         // deposit 100 RING for 1 year
         await ring.contract.transfer['address,uint256,bytes']( bank.address, 10000 * COIN, '0x' + abi.rawEncode(['uint256'], [12]).toString('hex'), { from: investor, gas: 300000 });
-        let ktonAmount = await kton.balanceOf(investor);
+        let ktonAmount1 = await kton.balanceOf(investor);
         
-        assert.equal(ktonAmount.toNumber(), 1 * COIN);
-        // using the way to call overloaded functions.
-        //let tx = ring.contract.transfer['address,uint256,bytes'](bank.address, 100 * 10**18, "0x1", {from:deployer});
-        //console.log(tx);
-        //await tx;
+        assert.equal(ktonAmount1.toNumber(), 1 * COIN);
 
-        //let balance = await kton.balanceOf.call(deployer);
-        //console.log(balance.toNumber());
-        //assert.equal(balance.toNumber(), 100 , "returned unexpected kton");
-    })
 
-    it('should deduct correct amount of penalty', async() => {
         await ring.contract.transfer['address,uint256,bytes']( bank.address, 30000 * COIN, '0x' + abi.rawEncode(['uint256'], [12]).toString('hex'), { from: investor, gas: 300000 });
+
         let ktonAmount = await kton.balanceOf(investor);
 
         let userTotal = await bank.userTotalDeposit.call(investor);
@@ -102,10 +96,14 @@ contract('Gringotts Bank Test', async(accounts) => {
         assert.equal(deposit[5], false);
 
         assert.equal(ktonAmount.toNumber(), 4 * COIN);
+    })
 
+    it('should deduct correct amount of penalty', async() => {
         let penalty = await bank.computePenalty.call(0);
+
         console.log("Penalty is ... " + penalty.toNumber());
         assert.equal(penalty.toNumber(), 3 * COIN);
+        
 
         await kton.contract.transfer['address,uint256,bytes']( bank.address, 3 * COIN, '0x' + abi.rawEncode(['uint256'], [0]).toString('hex'), { from: investor, gas: 300000 });
 
@@ -123,6 +121,18 @@ contract('Gringotts Bank Test', async(accounts) => {
         
         assert.equal(ktonAmount2.toNumber(), 1 * COIN);
 
+    })
+
+    it('should transfer owner of deposit successful', async() => {
+        await bank.transferDeposit(investor2, 1, {from: investor, gas: 300000});
+        let deposit = await bank.getDeposit.call(1);
+
+        let depositId = await bank.userDeposits.call(investor2, 0);
+
+        assert.equal(deposit[0], investor2);
+        assert.equal(depositId, 1);
+
+        await bank.transferDeposit(investor, 1, {from: investor2, gas: 300000});
     })
 
     // need help with timecop
