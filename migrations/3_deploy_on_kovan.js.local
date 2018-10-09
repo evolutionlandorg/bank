@@ -13,6 +13,7 @@ var conf = {
 }
 
 module.exports = function(deployer) {
+    deployer.deploy(SettingsRegistry);
     deployer.deploy(StandardERC223, 'KTON');
     deployer.deploy(GringottsBankProxy);
     deployer.deploy(GringottsBank);
@@ -21,20 +22,24 @@ module.exports = function(deployer) {
         console.log('start configure')
         console.log("LOGGING kton address : ", StandardERC223.address);
 
+        let kton = await StandardERC223.deployed();
+        let ring = await deployer.deploy(StandardERC223, 'RING');
+        console.log("LOGGING ring address : ", ring.address);
         let bank = await GringottsBank.deployed();
         let proxy = await GringottsBankProxy.deployed();
         await proxy.upgradeTo(bank.address);
+        let registry = await SettingsRegistry.deployed();
 
         let bankProxy = await GringottsBank.at(GringottsBankProxy.address);
-        await bankProxy.initializeContract(conf.ring_address, StandardERC223.address, conf.registry_address);
+        await bankProxy.initializeContract(ring.address, kton.address, registry.address);
 
-        console.log("LOGGING initialization success!")
+        console.log("LOGGING initialization success!");
 
         let bank_unit_interest = await bank.UINT_BANK_UNIT_INTEREST.call();
-        await SettingsRegistry.at(conf.registry_address).setUintProperty(bank_unit_interest, conf.bank_unit_interest);
+        await registry.setUintProperty(bank_unit_interest, conf.bank_unit_interest);
 
         let bank_penalty_multiplier = await bank.UINT_BANK_PENALTY_MULTIPLIER.call();
-        await SettingsRegistry.at(conf.registry_address).setUintProperty(bank_penalty_multiplier, conf.bank_penalty_multiplier);
+        await registry.setUintProperty(bank_penalty_multiplier, conf.bank_penalty_multiplier);
 
         console.log("Loging: set bank authority.");
         // await StandardERC223.at(kton).setOwner(GringottsBank.address);
