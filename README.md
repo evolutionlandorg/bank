@@ -21,7 +21,7 @@ ring_.transfer(address_of_GringottsBank, amount_of_ring, _data)
 ```
 
 #### 2. How to withdraw RING after maturity
-invoke `GringottsBank.claimBack`
+invoke `GringottsBank.claimDeposit`
 
 ### 3. how to withdraw RING before maturity
 invoke
