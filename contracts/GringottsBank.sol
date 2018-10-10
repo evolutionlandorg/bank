@@ -13,7 +13,7 @@ contract  GringottsBank is Ownable, BankSettingIds {
      */
     event ClaimedTokens(address indexed _token, address indexed _owner, uint _amount);
 
-    event NewDeposit(uint256 indexed _depositID, address indexed _depositor, uint _value, uint _month);
+    event NewDeposit(uint256 indexed _depositID, address indexed _depositor, uint _value, uint _month, uint _interest);
 
     event ClaimedDeposit(uint256 indexed _depositID, address indexed _depositor, uint _value, bool isPenalty);
 
@@ -251,7 +251,7 @@ contract  GringottsBank is Ownable, BankSettingIds {
         uint interest = computeInterest(_value, _month, _unitInterest);
         IMintableERC20(kryptonite).mint(_depositor, interest);
         
-        emit NewDeposit(_depositId, _depositor, _value, _month);
+        emit NewDeposit(_depositId, _depositor, _value, _month, interest);
     }
 
     /**
