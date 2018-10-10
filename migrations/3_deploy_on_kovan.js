@@ -13,7 +13,12 @@ var conf = {
     ring_address: '0x6df4e0da83e47e3f6cd7d725224bc73f0e198c4f'
 }
 
-module.exports = async(deployer) => {
+module.exports = async(deployer, network, accounts) => {
+    if (network != "kovan")
+    {
+        return;
+    }
+
     deployer.deploy(StandardERC223, 'KTON');
     deployer.deploy(GringottsBankProxy);
     deployer.deploy(GringottsBank)
