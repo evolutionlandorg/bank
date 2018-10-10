@@ -35,7 +35,7 @@ kryptonite_.transfer(address_of_GringottsBank, amount_of_KTON_as_penalty, _data)
 KTON: 0x8db914ef206c7f6c36e5223fce17900b587f46d2
 bankProxy: 0x33dcd37b0b7315105859f9aa4b603339ad8825fc
 bankLogic: 0x76cd2e158e8cb48523da1ffb83f64331544ae9d4
-bankAuthority: 0x6d01b0b41520a3f581461dc744910949d2f1ca36
+bankAuthority: 0x34ebd9edfdaed8dc578b7390d62abf43044fdfb2
 ```
 
 
