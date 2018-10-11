@@ -15,7 +15,7 @@ contract  GringottsBank is Ownable, BankSettingIds {
 
     event NewDeposit(uint256 indexed _depositID, address indexed _depositor, uint _value, uint _month, uint _interest);
 
-    event ClaimedDeposit(uint256 indexed _depositID, address indexed _depositor, uint _value, bool isPenalty);
+    event ClaimedDeposit(uint256 indexed _depositID, address indexed _depositor, uint _value, bool isPenalty, uint penaltyAmount);
 
     event TransferDeposit(uint256 indexed _depositID, address indexed _oldDepositor, address indexed _newDepositor);
 
@@ -117,7 +117,7 @@ contract  GringottsBank is Ownable, BankSettingIds {
 
             require(_amount >= computePenalty(_depositID), "No enough amount of KTON penalty.");
 
-            _claimDeposit(_from, _depositID, true);
+            _claimDeposit(_from, _depositID, true, _amount);
 
             // burn the KTON transferred in
             IBurnableERC20(kryptonite).burn(address(this), _amount);
@@ -146,7 +146,7 @@ contract  GringottsBank is Ownable, BankSettingIds {
     }
 
     function claimDeposit(uint _depositID) public {
-        _claimDeposit(msg.sender, _depositID, false);
+        _claimDeposit(msg.sender, _depositID, false, 0);
     }
 
     function claimDepositWithPenalty(uint _depositID) public {
@@ -154,7 +154,7 @@ contract  GringottsBank is Ownable, BankSettingIds {
 
         require(kryptonite.transferFrom(msg.sender, address(this), _penalty));
 
-        _claimDeposit(msg.sender, _depositID, true);
+        _claimDeposit(msg.sender, _depositID, true, _penalty);
 
         IBurnableERC20(kryptonite).burn(address(this), _penalty);
 
@@ -198,7 +198,7 @@ contract  GringottsBank is Ownable, BankSettingIds {
     }
 
     // normal Redemption, withdraw at maturity
-    function _claimDeposit(address _depositor, uint _depositID, bool isPenalty) internal {
+    function _claimDeposit(address _depositor, uint _depositID, bool isPenalty, uint _penaltyAmount) internal {
         require(deposits[_depositID].startAt > 0, "Deposit not created.");
         require(deposits[_depositID].claimed == false, "Already claimed");
         require(deposits[_depositID].depositor == _depositor, "Depositor must match.");
@@ -214,7 +214,7 @@ contract  GringottsBank is Ownable, BankSettingIds {
 
         require(ring.transfer(_depositor, deposits[_depositID].value));
 
-        emit ClaimedDeposit(_depositID, _depositor, deposits[_depositID].value, isPenalty);
+        emit ClaimedDeposit(_depositID, _depositor, deposits[_depositID].value, isPenalty, _penaltyAmount);
     }
 
     /**
