@@ -1,13 +1,13 @@
 {
   "name": "@evolutionland/bank",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "",
   "main": "truffle-config.js",
   "directories": {
     "test": "test"
   },
   "dependencies": {
-    "@evolutionland/common": "^1.0.14",
+    "@evolutionland/common": "^1.2.2",
     "@evolutionland/upgraeability-using-unstructured-storage": "^0.1.1",
     "ethereumjs-abi": "^0.6.5",
     "openzeppelin-solidity": "^1.12.0",
