@@ -37,11 +37,11 @@ module.exports = async(deployer, network, accounts) => {
 
         console.log("LOGGING initialization success!")
 
-        // let bank_unit_interest = await bank.UINT_BANK_UNIT_INTEREST.call();
-        // await SettingsRegistry.at(conf.registry_address).setUintProperty(bank_unit_interest, conf.bank_unit_interest);
-        //
-        // let bank_penalty_multiplier = await bank.UINT_BANK_PENALTY_MULTIPLIER.call();
-        // await SettingsRegistry.at(conf.registry_address).setUintProperty(bank_penalty_multiplier, conf.bank_penalty_multiplier);
+        let bank_unit_interest = await bank.UINT_BANK_UNIT_INTEREST.call();
+        await SettingsRegistry.at(conf.registry_address).setUintProperty(bank_unit_interest, conf.bank_unit_interest);
+
+        let bank_penalty_multiplier = await bank.UINT_BANK_PENALTY_MULTIPLIER.call();
+        await SettingsRegistry.at(conf.registry_address).setUintProperty(bank_penalty_multiplier, conf.bank_penalty_multiplier);
 
         console.log("Loging: set bank authority.");
         // await StandardERC223.at(kton).setOwner(GringottsBank.address);
