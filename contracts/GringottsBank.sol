@@ -324,7 +324,7 @@ contract  GringottsBank is Ownable, BankSettingIds {
     }
 
     function setRing(address _ring) public onlyOwner {
-        ring = ERC20(ring);
+        ring = ERC20(_ring);
     }
 
     function setRegistry(address _registry) public onlyOwner {
