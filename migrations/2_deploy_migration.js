@@ -2,7 +2,7 @@ const GringottsBank = artifacts.require("./GringottsBank.sol");
 const SettingsRegistry = artifacts.require("./SettingsRegistry.sol");
 const StandardERC223 = artifacts.require("./StandardERC223.sol");
 const DeployAndTest = artifacts.require("./DeployAndTest.sol");
-const BankAuthority = artifacts.require("./BankAuthority.sol");
+const KTONAuthority = artifacts.require("./KTONAuthority.sol");
 const GringottsBankProxy = artifacts.require("OwnedUpgradeabilityProxy")
 
 const conf = {
@@ -11,7 +11,7 @@ const conf = {
 }
 
 module.exports = function(deployer, network, accounts) {
-    if (network == "developement")
+    if (network == "develop")
     {
         deployOnLocal(deployer, network, accounts);
     }
@@ -40,9 +40,9 @@ function deployOnLocal(deployer, network, accounts) {
         let ring  =  await instance.testRING.call();
         let kton  =  await instance.testKTON.call();
         console.log("Loging: ring..." + ring);
-        await bankProxy.initializeContract(ring, kton, SettingsRegistry.address);
+        await bankProxy.initializeContract(SettingsRegistry.address);
 
-        return deployer.deploy(BankAuthority, GringottsBankProxy.address);
+        return deployer.deploy(KTONAuthority, GringottsBankProxy.address);
     }).then(async () => {
         console.log("Loging: set bank authority.");
         
@@ -63,9 +63,15 @@ function deployOnLocal(deployer, network, accounts) {
         let bank_penalty_multiplier = await bank.UINT_BANK_PENALTY_MULTIPLIER.call();
         await registry.setUintProperty(bank_penalty_multiplier, conf.bank_penalty_multiplier);
 
+        let ring_settings = await bank.CONTRACT_RING_ERC20_TOKEN.call();
+        await registry.setAddressProperty(ring_settings, ring);
+
+        let kton_settings = await bank.CONTRACT_KTON_ERC20_TOKEN.call();
+        await registry.setAddressProperty(kton_settings, kton);
+
         console.log("Loging: set bank authority.");
         // await StandardERC223.at(kton).setOwner(GringottsBank.address);
-        await StandardERC223.at(kton).setAuthority(BankAuthority.address);
+        await StandardERC223.at(kton).setAuthority(KTONAuthority.address);
 
         let interest = await bank.computeInterest.call(10000, 12, conf.bank_unit_interest);
         console.log("Current annual interest for 10000 RING is: ... " + interest + " KTON");

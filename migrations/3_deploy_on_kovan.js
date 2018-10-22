@@ -1,7 +1,7 @@
 const GringottsBank = artifacts.require('GringottsBank');
 const SettingsRegistry = artifacts.require('SettingsRegistry');
 const StandardERC223 = artifacts.require('StandardERC223');
-const BankAuthority = artifacts.require('BankAuthority');
+const KTONAuthority = artifacts.require('KTONAuthority');
 const GringottsBankProxy = artifacts.require('OwnedUpgradeabilityProxy');
 const BankSettingIds = artifacts.require('BankSettingIds');
 
@@ -23,7 +23,7 @@ module.exports = async(deployer, network, accounts) => {
     deployer.deploy(GringottsBankProxy);
     deployer.deploy(GringottsBank)
     .then (async() => {
-        await deployer.deploy(BankAuthority,  GringottsBankProxy.address)
+        await deployer.deploy(KTONAuthority,  GringottsBankProxy.address)
         console.log("FIRST bankProxy: ", GringottsBankProxy.address);
         console.log('start configure')
         console.log("LOGGING kton address : ", StandardERC223.address);
@@ -45,12 +45,12 @@ module.exports = async(deployer, network, accounts) => {
 
         console.log("Loging: set bank authority.");
         // await StandardERC223.at(kton).setOwner(GringottsBank.address);
-        await StandardERC223.at(StandardERC223.address).setAuthority(BankAuthority.address);
+        await StandardERC223.at(StandardERC223.address).setAuthority(KTONAuthority.address);
 
         let interest = await bankProxy.computeInterest.call(10000, 12, conf.bank_unit_interest);
         console.log("Current annual interest for 10000 RING is: ... " + interest + " KTON");
 
-        let bankInAuthority = await BankAuthority.at(BankAuthority.address).bank();
+        let bankInAuthority = await KTONAuthority.at(KTONAuthority.address).bank();
         console.log('BankProxy in authority: ', bankInAuthority);
         console.log('real BankProxy: ', bankProxy.address);
     })

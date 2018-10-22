@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 import "@evolutionland/common/contracts/interfaces/IAuthority.sol";
 
-contract BankAuthority is IAuthority {
+contract KTONAuthority is IAuthority {
     address public bank;
 
     constructor(address _bank) public

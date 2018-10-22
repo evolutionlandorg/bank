@@ -35,7 +35,7 @@ kryptonite_.transfer(address_of_GringottsBank, amount_of_KTON_as_penalty, _data)
 KTON: 0x8db914ef206c7f6c36e5223fce17900b587f46d2
 bankProxy: 0x33dcd37b0b7315105859f9aa4b603339ad8825fc
 bankLogic: 0x834c672f4fe27df295f624e91b64e6f4e01d83bb
-bankAuthority: 0x34ebd9edfdaed8dc578b7390d62abf43044fdfb2
+ktonAuthority: 0x34ebd9edfdaed8dc578b7390d62abf43044fdfb2
 ```
 
 ### 5. Versions of Bank Logic Contracts

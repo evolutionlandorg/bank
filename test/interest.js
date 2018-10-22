@@ -20,8 +20,10 @@ contract('Gringotts Bank Interest Calculating Test', async(accounts) => {
         bank     = await GringottsBank.deployed();
         registry = await SettingsRegistry.deployed();
 
-        ring = StandardERC223.at(await bank.ring.call())
-        kton = StandardERC223.at(await bank.kryptonite.call())
+        let ring_settings = await bank.CONTRACT_RING_ERC20_TOKEN.call();
+        let kton_settings = await bank.CONTRACT_KTON_ERC20_TOKEN.call();
+        ring = StandardERC223.at(await registry.addressOf.call(ring_settings))
+        kton = StandardERC223.at(await registry.addressOf.call(kton_settings))
 
         console.log('Bank address: ', bank.address);
         console.log('registry address: ', registry.address);
