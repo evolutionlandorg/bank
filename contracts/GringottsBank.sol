@@ -106,7 +106,8 @@ contract  GringottsBank is DSAuth, BankSettingIds {
             _deposit(_from, _amount, months);
         }
         //  Early Redemption entrance
-        if (registry.addressOf(CONTRACT_KTON_ERC20_TOKEN) == msg.sender) {
+        address kton = registry.addressOf(CONTRACT_KTON_ERC20_TOKEN);
+        if (kton == msg.sender) {
             uint _depositID = bytesToUint256(_data);
 
             require(_amount >= computePenalty(_depositID), "No enough amount of KTON penalty.");
@@ -114,7 +115,7 @@ contract  GringottsBank is DSAuth, BankSettingIds {
             _claimDeposit(_from, _depositID, true, _amount);
 
             // burn the KTON transferred in
-            IBurnableERC20(registry.addressOf(CONTRACT_KTON_ERC20_TOKEN)).burn(address(this), _amount);
+            IBurnableERC20(kton).burn(address(this), _amount);
         }
     }
 
@@ -147,11 +148,13 @@ contract  GringottsBank is DSAuth, BankSettingIds {
     function claimDepositWithPenalty(uint _depositID) public {
         uint256 _penalty = computePenalty(_depositID);
 
-        require(ERC20(registry.addressOf(CONTRACT_KTON_ERC20_TOKEN)).transferFrom(msg.sender, address(this), _penalty));
+        address kton = registry.addressOf(CONTRACT_KTON_ERC20_TOKEN);
+
+        require(ERC20(kton).transferFrom(msg.sender, address(this), _penalty));
 
         _claimDeposit(msg.sender, _depositID, true, _penalty);
 
-        IBurnableERC20(registry.addressOf(CONTRACT_KTON_ERC20_TOKEN)).burn(address(this), _penalty);
+        IBurnableERC20(kton).burn(address(this), _penalty);
 
     }
 
