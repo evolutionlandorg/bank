@@ -1,13 +1,13 @@
 pragma solidity ^0.4.24;
 
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "@evolutionland/common/contracts/interfaces/ISettingsRegistry.sol";
 import "@evolutionland/common/contracts/interfaces/IBurnableERC20.sol";
 import "@evolutionland/common/contracts/interfaces/IMintableERC20.sol";
+import "@evolutionland/common/contracts/DSAuth.sol";
 import "./BankSettingIds.sol";
 
-contract  GringottsBank is Ownable, BankSettingIds {
+contract  GringottsBank is DSAuth, BankSettingIds {
     /*
      *  Events
      */
@@ -29,16 +29,20 @@ contract  GringottsBank is Ownable, BankSettingIds {
      */
     struct Deposit {
         address depositor;
+        uint48 months; // Length of time from the deposit's beginning to end (in months), For now, months must >= 1 and <= 36
+        uint48 startAt;   // when player deposit, timestamp in seconds
         uint128 value;  // amount of ring
-        uint128 months; // Length of time from the deposit's beginning to end (in months), For now, months must >= 1 and <= 36
-        uint256 startAt;   // when player deposit, timestamp in seconds
-        uint256 unitInterest;
+        uint64 unitInterest;
         bool claimed;
     }
+
 
     /*
      *  Storages
      */
+
+    bool private singletonLock = false;
+
 
     ISettingsRegistry public registry;
 
@@ -50,8 +54,6 @@ contract  GringottsBank is Ownable, BankSettingIds {
 
     // player => totalDepositRING, total number of ring that the player has deposited
     mapping (address => uint256) public userTotalDeposit;
-
-    bool private singletonLock = false;
 
     /*
      *  Modifiers
@@ -67,11 +69,17 @@ contract  GringottsBank is Ownable, BankSettingIds {
         _;
     }
 
+    modifier canBeStoredWith48Bits(uint256 _value) {
+        require(_value < 281474976710656);
+        _;
+    }
+
+
     /**
      * @dev Bank's constructor which set the token address and unitInterest_
      */
     constructor () public {
-        // initializeContract(_ring, _kton, _registry);
+        // initializeContract(_registry);
     }
 
     /**
@@ -81,6 +89,8 @@ contract  GringottsBank is Ownable, BankSettingIds {
     function initializeContract(address _registry) public singletonLockCall {
         // call Ownable's constructor
         owner = msg.sender;
+
+        emit LogSetOwner(msg.sender);
 
         registry = ISettingsRegistry(_registry);
     }
@@ -106,6 +116,7 @@ contract  GringottsBank is Ownable, BankSettingIds {
             _deposit(_from, _amount, months);
         }
         //  Early Redemption entrance
+
         if (kryptonite == msg.sender) {
             uint _depositID = bytesToUint256(_data);
 
@@ -134,8 +145,10 @@ contract  GringottsBank is Ownable, BankSettingIds {
      * @param _months - the amount of months that the token will be locked in the deposit.
      */
     function deposit(address _benificiary, uint256 _amount, uint256 _months) public {
+
         address ring = registry.addressOf(SettingIds.CONTRACT_RING_ERC20_TOKEN);
         require(ERC20(ring).transferFrom(msg.sender, address(this), _amount), "RING token tranfer failed.");
+
 
         _deposit(_benificiary, _amount, _months);
     }
@@ -213,6 +226,7 @@ contract  GringottsBank is Ownable, BankSettingIds {
 
         require(ERC20(ring).transfer(_depositor, deposits[_depositID].value));
 
+
         emit ClaimedDeposit(_depositID, _depositor, deposits[_depositID].value, isPenalty, _penaltyAmount);
     }
 
@@ -222,8 +236,10 @@ contract  GringottsBank is Ownable, BankSettingIds {
      * @param _value - depositor wants to deposit how many tokens
      * @param _month - Length of time from the deposit's beginning to end (in months).
      */
+
     function _deposit(address _depositor, uint _value, uint _month) 
         canBeStoredWith128Bits(_value) canBeStoredWith128Bits(_month) internal returns (uint _depositId) {
+
         address kryptonite = ERC20(registry.addressOf(SettingIds.CONTRACT_KTON_ERC20_TOKEN));
 
         require( _value > 0 );  // because the _value is pass in from token transfer, token transfer will help check, so there should not be overflow issues.
@@ -231,14 +247,14 @@ contract  GringottsBank is Ownable, BankSettingIds {
 
         _depositId = depositCount;
 
-        uint _unitInterest = registry.uintOf(BankSettingIds.UINT_BANK_UNIT_INTEREST);
+        uint64 _unitInterest = uint64(registry.uintOf(BankSettingIds.UINT_BANK_UNIT_INTEREST));
 
         deposits[_depositId] = Deposit({
             depositor: _depositor,
             value: uint128(_value),
-            months: uint128(_month),
-            startAt: now,
-            unitInterest: _unitInterest,
+            months: uint48(_month),
+            startAt: uint48(now),
+            unitInterest: uint48(_unitInterest),
             claimed: false
         });
         
@@ -262,7 +278,7 @@ contract  GringottsBank is Ownable, BankSettingIds {
      * @param _unitInterest - Parameter of basic interest for deposited RING.(default value is 1000, returns _unitInterest/ 10**7 for one year)
      */
     function computeInterest(uint _value, uint _month, uint _unitInterest) 
-        public canBeStoredWith128Bits(_value) canBeStoredWith128Bits(_month) pure returns (uint) {
+        public canBeStoredWith128Bits(_value) canBeStoredWith48Bits(_month) pure returns (uint) {
         // these two actually mean the multiplier is 1.015
         uint numerator = 67 ** _month;
         uint denominator = 66 ** _month;
@@ -324,8 +340,8 @@ contract  GringottsBank is Ownable, BankSettingIds {
         emit ClaimedTokens(_token, owner, balance);
     }
 
-
     function setRegistry(address _registry) public onlyOwner {
         registry = ISettingsRegistry(_registry);
     }
+
 }

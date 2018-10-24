@@ -1,8 +1,11 @@
 const GringottsBank = artifacts.require("./GringottsBank.sol");
 const SettingsRegistry = artifacts.require("./SettingsRegistry.sol");
 const StandardERC223 = artifacts.require("./StandardERC223.sol");
-const Proxy = artifacts.require("OwnedUpgradeabilityProxy")
+const Proxy = artifacts.require("OwnedUpgradeabilityProxy");
 const BankSettingIds = artifacts.require('BankSettingIds');
+
+
+
 
 const conf = {
     bank_unit_interest: 1000,
@@ -11,10 +14,11 @@ const conf = {
     ring_address: '0xf8720eb6ad4a530cccb696043a0d10831e2ff60e'
 }
 
-module.exports = function(deployer, network){
-    if(network == 'kovan') {
-        console.log(network);
 
+module.exports = function(deployer, network){
+    if(network != 'kovan') {
+        return
+    }
         deployer.deploy(BankSettingIds);
         deployer.deploy(StandardERC223, 'KTON');
         deployer.deploy(Proxy);
@@ -45,10 +49,12 @@ module.exports = function(deployer, network){
             await bankProxy.initializeContract(conf.registry_address);
             console.log("INITIALIZATION DONE! ");
 
+
             // kton.setAuthority will be done in market's migration
             let interest = await bankProxy.computeInterest.call(10000, 12, conf.bank_unit_interest);
             console.log("Current annual interest for 10000 RING is: ... " + interest + " KTON");
         });
-    }
+
+
 }
 
