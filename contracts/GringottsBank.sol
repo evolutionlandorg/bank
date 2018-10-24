@@ -36,7 +36,13 @@ contract  GringottsBank is DSAuth, BankSettingIds {
         bool claimed;
     }
 
+
+    /*
+     *  Storages
+     */
+
     bool private singletonLock = false;
+
 
     ISettingsRegistry public registry;
 
@@ -83,6 +89,7 @@ contract  GringottsBank is DSAuth, BankSettingIds {
     function initializeContract(address _registry) public singletonLockCall {
         // call Ownable's constructor
         owner = msg.sender;
+
         emit LogSetOwner(msg.sender);
 
         registry = ISettingsRegistry(_registry);
@@ -100,14 +107,17 @@ contract  GringottsBank is DSAuth, BankSettingIds {
      * @param _data - data which indicate the operations.
      */
     function tokenFallback(address _from, uint256 _amount, bytes _data) public {
+        address ring = registry.addressOf(SettingIds.CONTRACT_RING_ERC20_TOKEN);
+        address kryptonite = registry.addressOf(SettingIds.CONTRACT_KTON_ERC20_TOKEN);
+
         // deposit entrance
-        if(registry.addressOf(CONTRACT_RING_ERC20_TOKEN) == msg.sender) {
+        if(ring == msg.sender) {
             uint months = bytesToUint256(_data);
             _deposit(_from, _amount, months);
         }
         //  Early Redemption entrance
-        address kton = registry.addressOf(CONTRACT_KTON_ERC20_TOKEN);
-        if (kton == msg.sender) {
+
+        if (kryptonite == msg.sender) {
             uint _depositID = bytesToUint256(_data);
 
             require(_amount >= computePenalty(_depositID), "No enough amount of KTON penalty.");
@@ -115,7 +125,7 @@ contract  GringottsBank is DSAuth, BankSettingIds {
             _claimDeposit(_from, _depositID, true, _amount);
 
             // burn the KTON transferred in
-            IBurnableERC20(kton).burn(address(this), _amount);
+            IBurnableERC20(kryptonite).burn(address(this), _amount);
         }
     }
 
@@ -135,8 +145,10 @@ contract  GringottsBank is DSAuth, BankSettingIds {
      * @param _months - the amount of months that the token will be locked in the deposit.
      */
     function deposit(address _benificiary, uint256 _amount, uint256 _months) public {
-        require(
-            ERC20(registry.addressOf(CONTRACT_RING_ERC20_TOKEN)).transferFrom(msg.sender, address(this), _amount), "RING token tranfer failed.");
+
+        address ring = registry.addressOf(SettingIds.CONTRACT_RING_ERC20_TOKEN);
+        require(ERC20(ring).transferFrom(msg.sender, address(this), _amount), "RING token tranfer failed.");
+
 
         _deposit(_benificiary, _amount, _months);
     }
@@ -146,15 +158,14 @@ contract  GringottsBank is DSAuth, BankSettingIds {
     }
 
     function claimDepositWithPenalty(uint _depositID) public {
+        address kryptonite = ERC20(registry.addressOf(SettingIds.CONTRACT_KTON_ERC20_TOKEN));
         uint256 _penalty = computePenalty(_depositID);
 
-        address kton = registry.addressOf(CONTRACT_KTON_ERC20_TOKEN);
-
-        require(ERC20(kton).transferFrom(msg.sender, address(this), _penalty));
+        require(ERC20(kryptonite).transferFrom(msg.sender, address(this), _penalty));
 
         _claimDeposit(msg.sender, _depositID, true, _penalty);
 
-        IBurnableERC20(kton).burn(address(this), _penalty);
+        IBurnableERC20(kryptonite).burn(address(this), _penalty);
 
     }
 
@@ -197,6 +208,9 @@ contract  GringottsBank is DSAuth, BankSettingIds {
 
     // normal Redemption, withdraw at maturity
     function _claimDeposit(address _depositor, uint _depositID, bool isPenalty, uint _penaltyAmount) internal {
+
+        address ring = registry.addressOf(SettingIds.CONTRACT_RING_ERC20_TOKEN);
+
         require(deposits[_depositID].startAt > 0, "Deposit not created.");
         require(deposits[_depositID].claimed == false, "Already claimed");
         require(deposits[_depositID].depositor == _depositor, "Depositor must match.");
@@ -210,8 +224,8 @@ contract  GringottsBank is DSAuth, BankSettingIds {
         deposits[_depositID].claimed = true;
         userTotalDeposit[_depositor] -= deposits[_depositID].value;
 
-        require(
-            ERC20(registry.addressOf(CONTRACT_RING_ERC20_TOKEN)).transfer(_depositor, deposits[_depositID].value));
+        require(ERC20(ring).transfer(_depositor, deposits[_depositID].value));
+
 
         emit ClaimedDeposit(_depositID, _depositor, deposits[_depositID].value, isPenalty, _penaltyAmount);
     }
@@ -222,8 +236,12 @@ contract  GringottsBank is DSAuth, BankSettingIds {
      * @param _value - depositor wants to deposit how many tokens
      * @param _month - Length of time from the deposit's beginning to end (in months).
      */
-    function _deposit(address _depositor, uint256 _value, uint256 _month) 
-        internal canBeStoredWith128Bits(_value) canBeStoredWith48Bits(_month)  returns (uint _depositId) {
+
+    function _deposit(address _depositor, uint _value, uint _month) 
+        canBeStoredWith128Bits(_value) canBeStoredWith128Bits(_month) internal returns (uint _depositId) {
+
+        address kryptonite = ERC20(registry.addressOf(SettingIds.CONTRACT_KTON_ERC20_TOKEN));
+
         require( _value > 0 );  // because the _value is pass in from token transfer, token transfer will help check, so there should not be overflow issues.
         require( _month <= 36 && _month >= 1 );
 
@@ -248,7 +266,7 @@ contract  GringottsBank is DSAuth, BankSettingIds {
 
         // give the player interest immediately
         uint interest = computeInterest(_value, _month, _unitInterest);
-        IMintableERC20(registry.addressOf(CONTRACT_KTON_ERC20_TOKEN)).mint(_depositor, interest);
+        IMintableERC20(kryptonite).mint(_depositor, interest);
         
         emit NewDeposit(_depositId, _depositor, _value, _month, interest);
     }
@@ -321,4 +339,9 @@ contract  GringottsBank is DSAuth, BankSettingIds {
 
         emit ClaimedTokens(_token, owner, balance);
     }
+
+    function setRegistry(address _registry) public onlyOwner {
+        registry = ISettingsRegistry(_registry);
+    }
+
 }
