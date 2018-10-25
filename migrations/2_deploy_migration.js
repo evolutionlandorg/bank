@@ -11,7 +11,7 @@ const MintAndBurnAuthority = artifacts.require('MintAndBurnAuthority');
 const conf = {
     bank_unit_interest: 1000,
     bank_penalty_multiplier: 3,
-    registry_address: '0xd8b7a3f6076872c2c37fb4d5cbfeb5bf45826ed7',
+    registry_address: '0x7050f7a4fa45b95997cd2158bfbe11137be24151',
 }
 
 
@@ -24,6 +24,7 @@ module.exports = function(deployer, network){
         deployer.deploy(Proxy);
         deployer.deploy(GringottsBank).then(async () => {
             return deployer.deploy(MintAndBurnAuthority, [Proxy.address]);
+        }).then(async() => {
 
             let registry = await SettingsRegistry.at(conf.registry_address);
             let settingIds = await BankSettingIds.deployed();
@@ -33,10 +34,10 @@ module.exports = function(deployer, network){
             let ktonId = await settingIds.CONTRACT_KTON_ERC20_TOKEN.call();
             await registry.setAddressProperty(ktonId, kton.address);
 
-            let bank_unit_interest = await bank.UINT_BANK_UNIT_INTEREST.call();
+            let bank_unit_interest = await settingIds.UINT_BANK_UNIT_INTEREST.call();
             await registry.setUintProperty(bank_unit_interest, conf.bank_unit_interest);
 
-            let bank_penalty_multiplier = await bank.UINT_BANK_PENALTY_MULTIPLIER.call();
+            let bank_penalty_multiplier = await settingIds.UINT_BANK_PENALTY_MULTIPLIER.call();
             await registry.setUintProperty(bank_penalty_multiplier, conf.bank_penalty_multiplier);
             console.log("REGISTRATION DONE! ");
 
