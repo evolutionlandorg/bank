@@ -1,7 +1,6 @@
 const GringottsBank = artifacts.require('GringottsBank');
 const SettingsRegistry = artifacts.require('SettingsRegistry');
 const StandardERC223 = artifacts.require('StandardERC223');
-const KTONAuthority = artifacts.require('KTONAuthority');
 const GringottsBankProxy = artifacts.require('OwnedUpgradeabilityProxy');
 const BankSettingIds = artifacts.require('BankSettingIds');
 

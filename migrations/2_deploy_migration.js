@@ -3,6 +3,7 @@ const SettingsRegistry = artifacts.require("./SettingsRegistry.sol");
 const StandardERC223 = artifacts.require("./StandardERC223.sol");
 const Proxy = artifacts.require("OwnedUpgradeabilityProxy");
 const BankSettingIds = artifacts.require('BankSettingIds');
+const MintAndBurnAuthority = artifacts.require('MintAndBurnAuthority');
 
 
 
@@ -10,8 +11,7 @@ const BankSettingIds = artifacts.require('BankSettingIds');
 const conf = {
     bank_unit_interest: 1000,
     bank_penalty_multiplier: 3,
-    registry_address: '0xf21930682df28044d88623e0707facf419477041',
-    ring_address: '0xf8720eb6ad4a530cccb696043a0d10831e2ff60e'
+    registry_address: '0xd8b7a3f6076872c2c37fb4d5cbfeb5bf45826ed7',
 }
 
 
@@ -23,6 +23,7 @@ module.exports = function(deployer, network){
         deployer.deploy(StandardERC223, 'KTON');
         deployer.deploy(Proxy);
         deployer.deploy(GringottsBank).then(async () => {
+            return deployer.deploy(MintAndBurnAuthority, [Proxy.address]);
 
             let registry = await SettingsRegistry.at(conf.registry_address);
             let settingIds = await BankSettingIds.deployed();
@@ -48,6 +49,11 @@ module.exports = function(deployer, network){
             let bankProxy = await GringottsBank.at(Proxy.address);
             await bankProxy.initializeContract(conf.registry_address);
             console.log("INITIALIZATION DONE! ");
+
+            // setAuthority to kton
+            await kton.setAuthority(MintAndBurnAuthority.address);
+
+            console.log('MIGRATION SUCCESS!');
 
 
             // kton.setAuthority will be done in market's migration
