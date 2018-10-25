@@ -3,6 +3,7 @@ pragma solidity ^0.4.23;
 import "@evolutionland/common/contracts/StandardERC223.sol";
 import "@evolutionland/common/contracts/SettingsRegistry.sol";
 import "@evolutionland/upgraeability-using-unstructured-storage/contracts/OwnedUpgradeabilityProxy.sol";
+import "@evolutionland/common/contracts/MintAndBurnAuthority.sol";
 
 contract DeployAndTest {
     address public testRING = new StandardERC223("RING");
