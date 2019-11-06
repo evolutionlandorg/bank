@@ -2,78 +2,75 @@ const GringottsBank = artifacts.require("./GringottsBank.sol");
 const SettingsRegistry = artifacts.require("./SettingsRegistry.sol");
 const StandardERC223 = artifacts.require("./StandardERC223.sol");
 const DeployAndTest = artifacts.require("./DeployAndTest.sol");
-const KTONAuthority = artifacts.require("./KTONAuthority.sol");
+const KTONAuthority = artifacts.require("./MintAndBurnAuthority.sol");
 const GringottsBankProxy = artifacts.require("OwnedUpgradeabilityProxy")
-
 const conf = {
     bank_unit_interest: 1000,
     bank_penalty_multiplier: 3
 }
 
-module.exports = function(deployer, network, accounts) {
-    if (network == "develop")
+module.exports = async function(deployer, network, accounts) {
+    if (network == "development")
     {
-        deployOnLocal(deployer, network, accounts);
+        await deployOnLocal(deployer, network, accounts);
     }
 };
 
-function deployOnLocal(deployer, network, accounts) {
-    console.log(network);
+async function deployOnLocal(deployer, network, accounts) {
+    console.log('CONFIG',network, accounts);
 
-    deployer.deploy([
-        SettingsRegistry,
-        DeployAndTest,
-        GringottsBankProxy
-    ]).then(async () => {
-        return deployer.deploy(GringottsBank);
-    }).then(async () => {
-        console.log("Loging: proxy... " + GringottsBankProxy.address);
-        console.log("Loging: bank... " + GringottsBank.address);
-        let bank = await GringottsBank.deployed();
-        let proxy = await GringottsBankProxy.deployed();
-        await proxy.upgradeTo(GringottsBank.address);
+    await deployer.deploy(SettingsRegistry);
+    await  deployer.deploy(DeployAndTest);
+    await deployer.deploy(GringottsBankProxy);
+    await deployer.deploy(GringottsBank);
 
-        let bankProxy = await GringottsBank.at(GringottsBankProxy.address);
+    console.log("Loging: proxy... " + GringottsBankProxy.address);
+    console.log("Loging: bank... " + GringottsBank.address);
+    let bank1 = await GringottsBank.deployed();
+    let proxy = await GringottsBankProxy.deployed();
+    await proxy.upgradeTo(GringottsBank.address);
 
-        let instance = await DeployAndTest.deployed();
+    let bankProxy = await GringottsBank.at(GringottsBankProxy.address);
 
-        let ring  =  await instance.testRING.call();
-        let kton  =  await instance.testKTON.call();
-        console.log("Loging: ring..." + ring);
-        await bankProxy.initializeContract(SettingsRegistry.address);
+    let instance = await DeployAndTest.deployed();
 
-        return deployer.deploy(KTONAuthority, GringottsBankProxy.address);
-    }).then(async () => {
-        console.log("Loging: set bank authority.");
-        
-        let deployAndTest = await DeployAndTest.deployed();
+    let ring  =  await instance.testRING.call();
+    let kton  =  await instance.testKTON.call();
+    console.log("Loging: ring..." + ring);
+    await bankProxy.initializeContract(SettingsRegistry.address);
 
-        let ring  =  await deployAndTest.testRING.call();
-        let kton  =  await deployAndTest.testKTON.call();
+    await deployer.deploy(KTONAuthority, [GringottsBankProxy.address]);
 
-        let bank = await GringottsBank.at(GringottsBankProxy.address); // await GringottsBankProxy.deployed();
 
-        let registry = await SettingsRegistry.deployed();
+    console.log("Loging: set bank authority.");
 
-        // default settings
-        // interest is about 1.015 KTON
-        let bank_unit_interest = await bank.UINT_BANK_UNIT_INTEREST.call();
-        await registry.setUintProperty(bank_unit_interest, conf.bank_unit_interest);
+    let deployAndTest = await DeployAndTest.deployed();
 
-        let bank_penalty_multiplier = await bank.UINT_BANK_PENALTY_MULTIPLIER.call();
-        await registry.setUintProperty(bank_penalty_multiplier, conf.bank_penalty_multiplier);
 
-        let ring_settings = await bank.CONTRACT_RING_ERC20_TOKEN.call();
-        await registry.setAddressProperty(ring_settings, ring);
+    console.log('kton', kton)
+    let bank = await GringottsBank.at(GringottsBankProxy.address); // await GringottsBankProxy.deployed();
 
-        let kton_settings = await bank.CONTRACT_KTON_ERC20_TOKEN.call();
-        await registry.setAddressProperty(kton_settings, kton);
+    let registry = await SettingsRegistry.deployed();
 
-        console.log("Loging: set bank authority.");
-        // await StandardERC223.at(kton).setOwner(GringottsBank.address);
-        await StandardERC223.at(kton).setAuthority(KTONAuthority.address);
+    // default settings
+    // interest is about 1.015 KTON
+    let bank_unit_interest = await bank.UINT_BANK_UNIT_INTEREST.call();
+    await registry.setUintProperty(bank_unit_interest, conf.bank_unit_interest);
 
-        let interest = await bank.computeInterest.call(10000, 12, conf.bank_unit_interest);
-        console.log("Current annual interest for 10000 RING is: ... " + interest + " KTON");
-    });
+    let bank_penalty_multiplier = await bank.UINT_BANK_PENALTY_MULTIPLIER.call();
+    await registry.setUintProperty(bank_penalty_multiplier, conf.bank_penalty_multiplier);
+
+    let ring_settings = await bank.CONTRACT_RING_ERC20_TOKEN.call();
+    await registry.setAddressProperty(ring_settings, ring);
+
+    let kton_settings = await bank.CONTRACT_KTON_ERC20_TOKEN.call();
+    await registry.setAddressProperty(kton_settings, kton);
+
+    console.log("Loging: set bank authority.");
+    // await StandardERC223.at(kton).setOwner(GringottsBank.address);
+    const standardERC223 = await StandardERC223.at(kton)
+    standardERC223.setAuthority(KTONAuthority.address);
+    let interest = await bank.computeInterest.call(10000, 12, conf.bank_unit_interest);
+    console.log("Current annual interest for 10000 RING is: ... " + interest + " KTON");
+
 }
