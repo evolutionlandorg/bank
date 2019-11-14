@@ -144,7 +144,7 @@ contract  GringottsBank is DSAuth, BankSettingIds {
          require(deposits[_depositID].unitInterest == _unitInterest, "Params error: unitInterest");
          require(deposits[_depositID].value == _value, "Params error: amount");
 
-         // TODO check drop darwinia address
+         require(_data.length == 32, "The address (Darwinia Network) must be in a 64-bit hexadecimal format");
 
          // TODO status
          deposits[_depositID].claimed = true;
