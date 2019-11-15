@@ -152,7 +152,7 @@ contract  GringottsBank is DSAuth, BankSettingIds {
          removeUserDepositsByID(_depositID, msg.sender);
          userTotalDeposit[_depositor] -= deposits[_depositID].value;
 
-         Burndrop(_depositID, _depositor, _months, _startAt, _unitInterest, _value, _data);
+         emit Burndrop(_depositID, _depositor, _months, _startAt, _unitInterest, _value, _data);
      }
 
     /**
