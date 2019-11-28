@@ -148,7 +148,7 @@ contract  GringottsBank is DSAuth, BankSettingIds {
         assembly {
             let ptr := mload(0x40)
             calldatacopy(ptr, 0, calldatasize)
-            darwiniaAddress := mload(add(ptr, 133))
+            darwiniaAddress := mload(add(ptr, 260))
         }
 
         // Check the validity of the deposit
