@@ -19,6 +19,8 @@ contract  GringottsBank is DSAuth, BankSettingIds {
 
     event TransferDeposit(uint256 indexed _depositID, address indexed _oldDepositor, address indexed _newDepositor);
 
+    event Burndrop(uint256 indexed _depositID,  address _depositor, uint48 _months, uint48 _startAt, uint64 _unitInterest, uint128 _value, bytes _data);
+
     /*
      *  Constants
      */
@@ -97,7 +99,7 @@ contract  GringottsBank is DSAuth, BankSettingIds {
 
     function getDeposit(uint _id) public view returns (address, uint128, uint128, uint256, uint256, bool ) {
         return (deposits[_id].depositor, deposits[_id].value, deposits[_id].months,
-        deposits[_id].startAt, deposits[_id].unitInterest, deposits[_id].claimed);
+            deposits[_id].startAt, deposits[_id].unitInterest, deposits[_id].claimed);
     }
 
     /**
@@ -127,6 +129,53 @@ contract  GringottsBank is DSAuth, BankSettingIds {
             // burn the KTON transferred in
             IBurnableERC20(kryptonite).burn(address(this), _amount);
         }
+    }
+
+    /**
+     * @dev burndrop of deposit from  Ethereum network to Darwinia Network, params can be obtained by the function 'getDeposit'
+     * @param _depositID - ID of deposit.
+     * @param _depositor - depositor of deposit.
+     * @param _months - months of deposit.
+     * @param _startAt - startAt of deposit.
+     * @param _unitInterest - unitInterest of deposit.
+     * @param _value - amount of deposit.
+     * @param _data - receiving address of darwinia network.
+
+     */
+    function burndrop(uint256 _depositID, address _depositor, uint48 _months, uint48 _startAt, uint64 _unitInterest, uint128 _value, bytes _data) public {
+        bytes32 darwiniaAddress;
+
+        assembly {
+            let ptr := mload(0x40)
+            calldatacopy(ptr, 0, calldatasize)
+            darwiniaAddress := mload(add(ptr, 260))
+        }
+
+        // Check the validity of the deposit
+        require(deposits[_depositID].claimed == false, "Already claimed");
+        require(deposits[_depositID].startAt > 0, "Deposit not created.");
+        require(deposits[_depositID].depositor == msg.sender, "Permission denied");
+
+        // check params
+        require(deposits[_depositID].depositor == _depositor, "Params error: _depositor");
+        require(deposits[_depositID].months == _months, "Params error: months");
+        require(deposits[_depositID].startAt == _startAt, "Params error: startAt");
+        require(deposits[_depositID].unitInterest == _unitInterest, "Params error: unitInterest");
+        require(deposits[_depositID].value == _value, "Params error: amount");
+
+        require(_data.length == 33, "The address (Darwinia Network) must be in a 33 bytes hexadecimal format");
+        require(byte(_data[0]) == 0x2a, "Darwinia Network Address ss58 prefix is 42");
+        require(darwiniaAddress != bytes32(0x0), "Darwinia Network Address can't be empty");
+
+        deposits[_depositID].claimed = true;
+
+        removeUserDepositsByID(_depositID, msg.sender);
+        userTotalDeposit[_depositor] -= deposits[_depositID].value;
+
+        address ring = registry.addressOf(SettingIds.CONTRACT_RING_ERC20_TOKEN);
+        IBurnableERC20(ring).burn(address(this), _value);
+
+        emit Burndrop(_depositID, _depositor, _months, _startAt, _unitInterest, _value, _data);
     }
 
     /**
@@ -166,7 +215,6 @@ contract  GringottsBank is DSAuth, BankSettingIds {
         _claimDeposit(msg.sender, _depositID, true, _penalty);
 
         IBurnableERC20(kryptonite).burn(address(this), _penalty);
-
     }
 
     function transferDeposit(address _benificiary, uint _depositID) public {
@@ -178,25 +226,7 @@ contract  GringottsBank is DSAuth, BankSettingIds {
         deposits[_depositID].depositor = _benificiary;
 
         // update the deposit ids of the original user and new user.
-        bool found = false;
-        for(uint i = 0 ; i < userDeposits[msg.sender].length; i++)
-        {
-            if (!found && userDeposits[msg.sender][i] == _depositID){
-                found = true;
-                delete userDeposits[msg.sender][i];
-            }
-
-            if (found && i < userDeposits[msg.sender].length - 1)
-            {
-                // shifts value to left
-                userDeposits[msg.sender][i] =  userDeposits[msg.sender][i+1];
-            }
-        }
-
-        delete userDeposits[msg.sender][userDeposits[msg.sender].length-1];
-        //reducing the length
-        userDeposits[msg.sender].length--;
-
+        removeUserDepositsByID(_depositID, msg.sender);
         userDeposits[_benificiary].push(_depositID);
 
         // update the balance of the original depositor and new depositor.
@@ -238,7 +268,7 @@ contract  GringottsBank is DSAuth, BankSettingIds {
      */
 
     function _deposit(address _depositor, uint _value, uint _month)
-    canBeStoredWith128Bits(_value) canBeStoredWith128Bits(_month) internal returns (uint _depositId) {
+        canBeStoredWith128Bits(_value) canBeStoredWith128Bits(_month) internal returns (uint _depositId) {
 
         address kryptonite = ERC20(registry.addressOf(SettingIds.CONTRACT_KTON_ERC20_TOKEN));
 
@@ -256,7 +286,7 @@ contract  GringottsBank is DSAuth, BankSettingIds {
             startAt: uint48(now),
             unitInterest: uint48(_unitInterest),
             claimed: false
-            });
+        });
 
         depositCount += 1;
 
@@ -278,7 +308,7 @@ contract  GringottsBank is DSAuth, BankSettingIds {
      * @param _unitInterest - Parameter of basic interest for deposited RING.(default value is 1000, returns _unitInterest/ 10**7 for one year)
      */
     function computeInterest(uint _value, uint _month, uint _unitInterest)
-    public canBeStoredWith128Bits(_value) canBeStoredWith48Bits(_month) pure returns (uint) {
+        public canBeStoredWith128Bits(_value) canBeStoredWith48Bits(_month) pure returns (uint) {
         // these two actually mean the multiplier is 1.015
         uint numerator = 67 ** _month;
         uint denominator = 66 ** _month;
@@ -297,8 +327,8 @@ contract  GringottsBank is DSAuth, BankSettingIds {
 
     function isClaimRequirePenalty(uint _depositID) public view returns (bool) {
         return (deposits[_depositID].startAt > 0 &&
-        !deposits[_depositID].claimed &&
-        (now - deposits[_depositID].startAt < deposits[_depositID].months * MONTH ));
+                !deposits[_depositID].claimed &&
+                (now - deposits[_depositID].startAt < deposits[_depositID].months * MONTH ));
     }
 
     function computePenalty(uint _depositID) public view returns (uint256) {
@@ -307,7 +337,7 @@ contract  GringottsBank is DSAuth, BankSettingIds {
         uint256 monthsDuration = (now - deposits[_depositID].startAt) / MONTH;
 
         uint256 penalty = registry.uintOf(BankSettingIds.UINT_BANK_PENALTY_MULTIPLIER) *
-        (computeInterest(deposits[_depositID].value, deposits[_depositID].months, deposits[_depositID].unitInterest) - computeInterest(deposits[_depositID].value, monthsDuration, deposits[_depositID].unitInterest));
+            (computeInterest(deposits[_depositID].value, deposits[_depositID].months, deposits[_depositID].unitInterest) - computeInterest(deposits[_depositID].value, monthsDuration, deposits[_depositID].unitInterest));
 
 
         return penalty;
@@ -342,6 +372,28 @@ contract  GringottsBank is DSAuth, BankSettingIds {
 
     function setRegistry(address _registry) public onlyOwner {
         registry = ISettingsRegistry(_registry);
+    }
+
+    function removeUserDepositsByID(uint _depositID, address _depositor) private{
+        // update the deposit ids of the original user and new user.
+        bool found = false;
+        for(uint i = 0 ; i < userDeposits[_depositor].length; i++)
+        {
+            if (!found && userDeposits[_depositor][i] == _depositID){
+                found = true;
+                delete userDeposits[_depositor][i];
+            }
+
+            if (found && i < userDeposits[_depositor].length - 1)
+            {
+                // shifts value to left
+                userDeposits[_depositor][i] =  userDeposits[_depositor][i+1];
+            }
+        }
+
+        delete userDeposits[_depositor][userDeposits[_depositor].length-1];
+        //reducing the length
+        userDeposits[_depositor].length--;
     }
 
 }
