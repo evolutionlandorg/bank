@@ -19,7 +19,7 @@ contract  GringottsBank is DSAuth, BankSettingIds {
 
     event TransferDeposit(uint256 indexed _depositID, address indexed _oldDepositor, address indexed _newDepositor);
 
-    event Burndrop(uint256 indexed _depositID,  address _depositor, uint48 _months, uint48 _startAt, uint64 _unitInterest, uint128 _value, bytes _data);
+    event BurnAndRedeem(uint256 indexed _depositID,  address _depositor, uint48 _months, uint48 _startAt, uint64 _unitInterest, uint128 _value, bytes _data);
 
     /*
      *  Constants
@@ -132,23 +132,18 @@ contract  GringottsBank is DSAuth, BankSettingIds {
     }
 
     /**
-     * @dev burndrop of deposit from  Ethereum network to Darwinia Network, params can be obtained by the function 'getDeposit'
+     * @dev transfer of deposit from  Ethereum network to Darwinia Network, params can be obtained by the function 'getDeposit'
      * @param _depositID - ID of deposit.
-     * @param _depositor - depositor of deposit.
-     * @param _months - months of deposit.
-     * @param _startAt - startAt of deposit.
-     * @param _unitInterest - unitInterest of deposit.
-     * @param _value - amount of deposit.
      * @param _data - receiving address of darwinia network.
 
      */
-    function burndrop(uint256 _depositID, address _depositor, uint48 _months, uint48 _startAt, uint64 _unitInterest, uint128 _value, bytes _data) public {
+    function burnAndRedeem(uint256 _depositID, bytes _data) public {
         bytes32 darwiniaAddress;
 
         assembly {
             let ptr := mload(0x40)
             calldatacopy(ptr, 0, calldatasize)
-            darwiniaAddress := mload(add(ptr, 260))
+            darwiniaAddress := mload(add(ptr, 100))
         }
 
         // Check the validity of the deposit
@@ -156,26 +151,27 @@ contract  GringottsBank is DSAuth, BankSettingIds {
         require(deposits[_depositID].startAt > 0, "Deposit not created.");
         require(deposits[_depositID].depositor == msg.sender, "Permission denied");
 
-        // check params
-        require(deposits[_depositID].depositor == _depositor, "Params error: _depositor");
-        require(deposits[_depositID].months == _months, "Params error: months");
-        require(deposits[_depositID].startAt == _startAt, "Params error: startAt");
-        require(deposits[_depositID].unitInterest == _unitInterest, "Params error: unitInterest");
-        require(deposits[_depositID].value == _value, "Params error: amount");
-
-        require(_data.length == 33, "The address (Darwinia Network) must be in a 33 bytes hexadecimal format");
-        require(byte(_data[0]) == 0x2a, "Darwinia Network Address ss58 prefix is 42");
+        require(_data.length == 32, "The address (Darwinia Network) must be in a 32 bytes hexadecimal format");
         require(darwiniaAddress != bytes32(0x0), "Darwinia Network Address can't be empty");
 
         deposits[_depositID].claimed = true;
-
         removeUserDepositsByID(_depositID, msg.sender);
-        userTotalDeposit[_depositor] -= deposits[_depositID].value;
+
+        require(deposits[_depositID].value <= userTotalDeposit[msg.sender], "Subtraction overflow");
+        userTotalDeposit[msg.sender] -= deposits[_depositID].value;
 
         address ring = registry.addressOf(SettingIds.CONTRACT_RING_ERC20_TOKEN);
-        IBurnableERC20(ring).burn(address(this), _value);
-
-        emit Burndrop(_depositID, _depositor, _months, _startAt, _unitInterest, _value, _data);
+        IBurnableERC20(ring).burn(address(this), deposits[_depositID].value);
+        
+        emit BurnAndRedeem(
+            _depositID, 
+            deposits[_depositID].depositor, 
+            deposits[_depositID].months, 
+            deposits[_depositID].startAt, 
+            deposits[_depositID].unitInterest, 
+            deposits[_depositID].value, 
+            _data
+        );
     }
 
     /**
@@ -230,8 +226,11 @@ contract  GringottsBank is DSAuth, BankSettingIds {
         userDeposits[_benificiary].push(_depositID);
 
         // update the balance of the original depositor and new depositor.
+        require(deposits[_depositID].value <= userTotalDeposit[msg.sender], "Subtraction overflow");
         userTotalDeposit[msg.sender] -= deposits[_depositID].value;
+
         userTotalDeposit[_benificiary] += deposits[_depositID].value;
+        require(userTotalDeposit[_benificiary] >= deposits[_depositID].value, "Addition overflow");
 
         emit TransferDeposit(_depositID, msg.sender, _benificiary);
     }
@@ -293,6 +292,7 @@ contract  GringottsBank is DSAuth, BankSettingIds {
         userDeposits[_depositor].push(_depositId);
 
         userTotalDeposit[_depositor] += _value;
+        require(userTotalDeposit[_depositor] >= _value, "Addition overflow");
 
         // give the player interest immediately
         uint interest = computeInterest(_value, _month, _unitInterest);
