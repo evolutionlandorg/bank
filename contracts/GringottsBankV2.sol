@@ -154,7 +154,6 @@ contract  GringottsBank is DSAuth, BankSettingIds {
         require(_data.length == 32, "The address (Darwinia Network) must be in a 32 bytes hexadecimal format");
         require(darwiniaAddress != bytes32(0x0), "Darwinia Network Address can't be empty");
 
-        deposits[_depositID].claimed = true;
         removeUserDepositsByID(_depositID, msg.sender);
 
         require(deposits[_depositID].value <= userTotalDeposit[msg.sender], "Subtraction overflow");
@@ -172,6 +171,8 @@ contract  GringottsBank is DSAuth, BankSettingIds {
             deposits[_depositID].value, 
             _data
         );
+
+        delete deposits[_depositID];
     }
 
     /**
