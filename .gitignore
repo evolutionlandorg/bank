@@ -6,3 +6,5 @@ package-lock.json
 truffle.js
 contracts-flattener
 2_deploy_migration.js.*
+waffle.json
+cache
